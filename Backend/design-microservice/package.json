@@ -1,0 +1,28 @@
+{
+  "name": "design-microservice",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+  "dev": "ts-node src/app.ts",
+  "build": "tsc",
+  "start": "node dist/app.js"
+  },
+  
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "mongoose": "^8.7.3",
+    "multer": "^1.4.5-lts.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.8.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  }
+}
