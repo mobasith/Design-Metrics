@@ -2,18 +2,28 @@ import { Request, Response } from 'express';
 import Design from '../models/designModel';
 
 export const createDesign = async (req: Request, res: Response) => {
-  const { designId, designTitle, description, createdBy, designInput } = req.body;
+  const { designId, designTitle, description, createdById,createdByName } = req.body;
+  const designInput = req.file; // File from the request
 
   try {
-    const newDesign = new Design({ designId, designInput, designTitle, description, createdBy });
-    await newDesign.save();
-    res.status(201).json(newDesign);
+      // Create a new design object
+      const newDesign = new Design({
+          designId,
+          designInput: designInput ? designInput.path : null, // Save the file path
+          designTitle,
+          description,
+          createdById,
+          createdByName,
+      });
+      
+      await newDesign.save();
+      res.status(201).json(newDesign);
   } catch (error) {
-    if (error instanceof Error) {
-      res.status(500).json({ message: error.message });
-    } else {
-      res.status(500).json({ message: 'An unknown error occurred' });
-    }
+      if (error instanceof Error) {
+          res.status(500).json({ message: error.message });
+      } else {
+          res.status(500).json({ message: 'An unknown error occurred' });
+      }
   }
 };
 

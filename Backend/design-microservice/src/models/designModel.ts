@@ -5,7 +5,8 @@ interface IDesign extends Document {
   designInput: string; // Store file path or URL
   designTitle: string;
   description?: string;
-  createdBy: number;
+  createdById: number;
+  createdByName: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -15,7 +16,8 @@ const designSchema = new mongoose.Schema<IDesign>({
   designInput: { type: String, required: true },
   designTitle: { type: String, required: true },
   description: { type: String },
-  createdBy: { type: Number, required: true },
+  createdById: { type: Number, required: true },
+  createdByName: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
