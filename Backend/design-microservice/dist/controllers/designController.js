@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateDesign = exports.getDesigns = exports.createDesign = void 0;
+exports.updateDesign = exports.getDesignsByUserId = exports.getDesigns = exports.createDesign = void 0;
 const designModel_1 = __importDefault(require("../models/designModel"));
 const createDesign = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { designId, designTitle, description, createdById, createdByName } = req.body;
@@ -55,7 +55,27 @@ const getDesigns = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     }
 });
 exports.getDesigns = getDesigns;
-// i want to create endpoijnt for update
+// New method to get designs by createdById
+const getDesignsByUserId = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { userId } = req.params;
+    try {
+        const designs = yield designModel_1.default.find({ createdById: userId }); // Adjust field name if necessary
+        if (designs.length === 0) {
+            return res.status(404).json({ message: 'No designs found for this user.' });
+        }
+        res.status(200).json(designs);
+    }
+    catch (error) {
+        if (error instanceof Error) {
+            res.status(500).json({ message: error.message });
+        }
+        else {
+            res.status(500).json({ message: 'An unknown error occurred' });
+        }
+    }
+});
+exports.getDesignsByUserId = getDesignsByUserId;
+// Update method remains unchanged
 const updateDesign = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { designId } = req.params;
     const { designInput, designTitle, description } = req.body;

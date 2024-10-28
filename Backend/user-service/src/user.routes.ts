@@ -55,16 +55,37 @@ router.post('/designs', upload.single('designInput'), async (req: Request, res: 
 router.get('/designs/getdesigns', async (req: Request, res: Response) => {
     try {
         const response = await axios.get('http://localhost:5000/api/designs'); // Adjust the URL based on your setup
-        // Format the response to return only design title, description, and created by name
         const formattedResponse = response.data.map((design: any) => ({
             designTitle: design.designTitle,
             description: design.description,
             createdByName: design.createdByName,
-            design:design.designInput // Only return the createdByName
+            design: design.designInput // Include the design input if needed
         }));
         res.status(response.status).json(formattedResponse);
     } catch (error: any) {
         console.error('Error fetching designs:', error);
+        if (error.response) {
+            res.status(error.response.status).json(error.response.data);
+        } else {
+            res.status(500).json({ message: 'An unknown error occurred' });
+        }
+    }
+});
+
+// New endpoint to get designs by user ID
+router.get('/designs/user/:userId', async (req: Request, res: Response) => {
+    const { userId } = req.params; // Extract userId from path parameters
+    try {
+        const response = await axios.get(`http://localhost:5000/api/designs/user/${userId}`); // Adjust the URL as necessary
+        const formattedResponse = response.data.map((design: any) => ({
+            designTitle: design.designTitle,
+            description: design.description,
+            createdByName: design.createdByName,
+            design: design.designInput // Include the design input if needed
+        }));
+        res.status(response.status).json(formattedResponse);
+    } catch (error: any) {
+        console.error('Error fetching designs for user:', error);
         if (error.response) {
             res.status(error.response.status).json(error.response.data);
         } else {
