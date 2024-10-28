@@ -1,0 +1,32 @@
+{
+  "name": "analytics-service",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node dist/server.js",
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/mongoose": "^5.11.97",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.8.1",
+    "@types/pdfkit": "^0.13.5",
+    "@types/xlsx": "^0.0.36",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "mongoose": "^8.7.3",
+    "multer": "^1.4.5-lts.1",
+    "pdfkit": "^0.15.0",
+    "xlsx": "^0.18.5"
+  }
+}
