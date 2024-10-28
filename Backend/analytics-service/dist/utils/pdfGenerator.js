@@ -16,20 +16,28 @@ exports.generatePDFReport = void 0;
 const pdfkit_1 = __importDefault(require("pdfkit"));
 const fs_1 = __importDefault(require("fs"));
 const generatePDFReport = (analyticsData, outputPath) => __awaiter(void 0, void 0, void 0, function* () {
-    const doc = new pdfkit_1.default();
-    doc.pipe(fs_1.default.createWriteStream(outputPath));
-    doc.fontSize(25).text('Analytics Report', { align: 'center' });
-    doc.moveDown();
-    doc.fontSize(16).text(`Design ID: ${analyticsData.designId}`);
-    doc.text(`Total Feedback Count: ${analyticsData.totalFeedbackCount}`);
-    doc.text(`Average Rating: ${analyticsData.averageRating}`);
-    doc.text(`Positive Feedback Count: ${analyticsData.positiveFeedbackCount}`);
-    doc.text(`Negative Feedback Count: ${analyticsData.negativeFeedbackCount}`);
-    doc.moveDown();
-    doc.text('Feedback Summary:');
-    analyticsData.feedbackSummary.forEach((comment) => {
-        doc.text(`- ${comment}`);
+    return new Promise((resolve, reject) => {
+        const doc = new pdfkit_1.default();
+        doc.pipe(fs_1.default.createWriteStream(outputPath))
+            .on('finish', () => {
+            resolve(); // Resolve the promise when done
+        })
+            .on('error', (err) => {
+            reject(err); // Reject the promise on error
+        });
+        doc.fontSize(25).text('Analytics Report', { align: 'center' });
+        doc.moveDown();
+        doc.fontSize(16).text(`Design ID: ${analyticsData.designId}`);
+        doc.text(`Total Feedback Count: ${analyticsData.totalFeedbackCount}`);
+        doc.text(`Average Rating: ${analyticsData.averageRating}`);
+        doc.text(`Positive Feedback Count: ${analyticsData.positiveFeedbackCount}`);
+        doc.text(`Negative Feedback Count: ${analyticsData.negativeFeedbackCount}`);
+        doc.moveDown();
+        doc.text('Feedback Summary:');
+        analyticsData.feedbackSummary.forEach((comment) => {
+            doc.text(`- ${comment}`);
+        });
+        doc.end(); // Finalize the PDF document
     });
-    doc.end();
 });
 exports.generatePDFReport = generatePDFReport;

@@ -9,31 +9,42 @@ class AnalyticsController {
         if (!req.file) {
             return res.status(400).send('No file uploaded.');
         }
-
+    
         const designId = parseInt(req.body.designId, 10);
+        if (isNaN(designId)) {
+            return res.status(400).send('Invalid designId provided.');
+        }
+    
         try {
             const feedbackData = parseExcel(req.file.path);
-            const totalFeedbackCount = feedbackData.length;
-
+            console.log('Parsed Feedback Data:', feedbackData); // Log parsed data
+    
             let totalRating = 0;
             let positiveFeedbackCount = 0;
             let negativeFeedbackCount = 0;
             const comments: string[] = [];
-
+    
             feedbackData.forEach((feedback: any) => {
-                totalRating += feedback.rating; // Assuming feedback has a `rating` field
-                if (feedback.comment) {
-                    comments.push(feedback.comment);
+                if (typeof feedback.Rating === 'number') {  // Use correct key 'Rating'
+                    totalRating += feedback.Rating;
+                    if (feedback.Rating >= 4) {
+                        positiveFeedbackCount++;
+                    } else {
+                        negativeFeedbackCount++;
+                    }
                 }
-                if (feedback.rating >= 4) {
-                    positiveFeedbackCount++;
+    
+                if (feedback.Comment) {  // Use correct key 'Comment'
+                    comments.push(feedback.Comment);
+                    console.log('Comment added:', feedback.Comment); // Log added comment
                 } else {
-                    negativeFeedbackCount++;
+                    console.log('No comment found for this feedback.'); // Log if no comment
                 }
             });
-
-            const averageRating = totalRating / totalFeedbackCount;
-
+    
+            const totalFeedbackCount = feedbackData.length;
+            const averageRating = totalFeedbackCount ? totalRating / totalFeedbackCount : 0;
+    
             const analyticsData = {
                 designId,
                 totalFeedbackCount,
@@ -42,20 +53,24 @@ class AnalyticsController {
                 negativeFeedbackCount,
                 feedbackSummary: comments,
             };
-
+    
+            console.log('Analytics Data before PDF generation:', analyticsData); // Log analytics data
+    
             // Save analytics data to MongoDB
             await AnalyticsModel.create(analyticsData);
-            
-            const reportFilePath = `reports/report-${Date.now()}.pdf`;
+    
+            const reportFilePath = `uploads/report-${Date.now()}.pdf`;
             await generatePDFReport(analyticsData, reportFilePath);
-
+    
+            // Send the PDF for download
             res.download(reportFilePath, 'analytics-report.pdf', (err) => {
                 if (err) {
                     console.error(err);
                     res.status(500).send('Error generating report');
                 }
             });
-        } catch (error:any) {
+        } catch (error: any) {
+            console.error('Error in uploadFeedback:', error); // Log any errors
             res.status(500).json({ error: error.message });
         } finally {
             // Cleanup uploaded file
@@ -64,6 +79,8 @@ class AnalyticsController {
             });
         }
     }
+    
+    
 }
 
 export default new AnalyticsController();
