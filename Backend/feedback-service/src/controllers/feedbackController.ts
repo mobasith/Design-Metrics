@@ -83,3 +83,18 @@ export const remove = async (req: Request, res: Response) => {
         return res.status(500).json({ error: "An error occurred while deleting feedback" });
     }
 };
+
+export const getFeedbackByDesignId = async (req: Request, res: Response) => {
+    const { designId } = req.params;
+
+    try {
+        const feedbacks = await FeedbackModel.find({ design_id: designId }); // Replace 'design_id' with your actual field name
+        if (feedbacks.length === 0) {
+            return res.status(404).json({ message: 'No feedback found for this design ID.' });
+        }
+        res.status(200).json(feedbacks);
+    } catch (error) {
+        console.error('Error fetching feedback by design ID:', error);
+        res.status(500).json({ message: 'An error occurred while fetching feedback.', error });
+    }
+};

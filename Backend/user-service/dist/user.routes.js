@@ -17,8 +17,11 @@ const user_controller_1 = __importDefault(require("./user.controller"));
 const axios_1 = __importDefault(require("axios"));
 const multer_1 = __importDefault(require("multer"));
 const form_data_1 = __importDefault(require("form-data"));
+const xlsx_1 = __importDefault(require("xlsx"));
+const fs_1 = __importDefault(require("fs")); // Import fs to delete the uploaded file after processing
 const router = (0, express_1.Router)();
-const upload = (0, multer_1.default)();
+const upload = (0, multer_1.default)({ dest: 'uploads/' }); // Use temporary storage for uploaded files
+// User Registration and Login Routes
 router.post('/register', (req, res) => user_controller_1.default.register(req, res));
 router.post('/login', (req, res) => user_controller_1.default.login(req, res));
 router.get('/', (req, res) => user_controller_1.default.getAllUsers(req, res));
@@ -34,7 +37,7 @@ router.post('/designs', upload.single('designInput'), (req, res) => __awaiter(vo
         formData.append('designId', designId);
         formData.append('designTitle', designTitle);
         formData.append('description', description);
-        formData.append('createdById', createdById); // Keep this as string
+        formData.append('createdById', createdById);
         formData.append('createdByName', createdByName);
         if (designInput) {
             formData.append('designInput', designInput.buffer, {
@@ -60,7 +63,7 @@ router.post('/designs', upload.single('designInput'), (req, res) => __awaiter(vo
 // New endpoint to get all designs
 router.get('/designs/getdesigns', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const response = yield axios_1.default.get('http://localhost:5000/api/designs'); // Adjust the URL based on your setup
+        const response = yield axios_1.default.get('http://localhost:5000/api/designs');
         const formattedResponse = response.data.map((design) => ({
             designTitle: design.designTitle,
             description: design.description,
@@ -81,9 +84,9 @@ router.get('/designs/getdesigns', (req, res) => __awaiter(void 0, void 0, void 0
 }));
 // New endpoint to get designs by user ID
 router.get('/designs/user/:userId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { userId } = req.params; // Extract userId from path parameters
+    const { userId } = req.params;
     try {
-        const response = yield axios_1.default.get(`http://localhost:5000/api/designs/user/${userId}`); // Adjust the URL as necessary
+        const response = yield axios_1.default.get(`http://localhost:5000/api/designs/user/${userId}`);
         const formattedResponse = response.data.map((design) => ({
             designTitle: design.designTitle,
             description: design.description,
@@ -94,6 +97,71 @@ router.get('/designs/user/:userId', (req, res) => __awaiter(void 0, void 0, void
     }
     catch (error) {
         console.error('Error fetching designs for user:', error);
+        if (error.response) {
+            res.status(error.response.status).json(error.response.data);
+        }
+        else {
+            res.status(500).json({ message: 'An unknown error occurred' });
+        }
+    }
+}));
+// Endpoint to post feedback
+router.post('/feedback/upload', upload.single('feedbackFile'), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+    }
+    try {
+        const workbook = xlsx_1.default.readFile(req.file.path);
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const feedbackData = xlsx_1.default.utils.sheet_to_json(sheet);
+        // Iterate through feedbackData and send each feedback to feedback service
+        for (const feedback of feedbackData) {
+            yield axios_1.default.post('http://localhost:3001/api/feedback', feedback);
+        }
+        // Optionally, delete the uploaded file after processing
+        fs_1.default.unlinkSync(req.file.path);
+        res.status(200).json({ message: 'Feedback uploaded successfully' });
+    }
+    catch (error) {
+        console.error('Error uploading feedback:', error);
+        if (error.response) {
+            res.status(error.response.status).json(error.response.data);
+        }
+        else {
+            res.status(500).json({ message: 'An unknown error occurred' });
+        }
+    }
+}));
+// Endpoint to get all feedbacks
+router.get('/feedback/getfeedbacks', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Make a GET request to the feedback service
+        const response = yield axios_1.default.get('http://localhost:3001/api/feedback');
+        // Send back the response data to the client
+        res.status(response.status).json(response.data);
+    }
+    catch (error) {
+        console.error('Error fetching feedbacks:', error);
+        if (error.response) {
+            res.status(error.response.status).json(error.response.data);
+        }
+        else {
+            res.status(500).json({ message: 'An unknown error occurred' });
+        }
+    }
+}));
+// New endpoint to get feedbacks by design ID
+router.get('/feedbacks/design/:designId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { designId } = req.params; // Extract designId from path parameters
+    try {
+        // Make a GET request to the feedback service, including designId as a query parameter
+        const response = yield axios_1.default.get(`http://localhost:3001/api/feedback/design/${designId}`);
+        // Send back the response data to the client
+        res.status(response.status).json(response.data);
+    }
+    catch (error) {
+        console.error('Error fetching feedbacks by design ID:', error);
         if (error.response) {
             res.status(error.response.status).json(error.response.data);
         }

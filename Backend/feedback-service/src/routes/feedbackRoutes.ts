@@ -18,4 +18,8 @@ router.put('/:id', (req: Request, res: Response) => FeedbackController.updateFee
 // Delete feedback by ID
 router.delete('/:id', (req: Request, res: Response) => FeedbackController.remove(req, res) as any);
 
+// New endpoint to get feedback by design ID
+router.get('/design/:designId', (req: Request, res: Response) => FeedbackController.getFeedbackByDesignId(req, res) as any);
+
+
 export default router;
