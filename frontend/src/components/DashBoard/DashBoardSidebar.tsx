@@ -1,35 +1,36 @@
-import React from 'react';
+// src/components/DashBoard/Sidebar.tsx
+import React from "react";
+import Select, { MultiValue } from "react-select";
 
 interface SidebarProps {
   selectedColumns: string[];
   setSelectedColumns: React.Dispatch<React.SetStateAction<string[]>>;
+  columns: string[];
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ selectedColumns, setSelectedColumns }) => {
-  const columns = ['Column 1', 'Column 2', 'Column 3', 'Column 4'];
-
-  const handleCheckboxChange = (column: string) => {
-    setSelectedColumns((prev) => 
-      prev.includes(column) 
-        ? prev.filter((col) => col !== column) 
-        : [...prev, column]
-    );
+const Sidebar: React.FC<SidebarProps> = ({
+  selectedColumns,
+  setSelectedColumns,
+  columns,
+}) => {
+  const handleColumnChange = (
+    newValue: MultiValue<{ value: string; label: string }>
+  ) => {
+    const selectedValues = newValue.map((option) => option.value);
+    setSelectedColumns(selectedValues);
   };
 
+  const columnOptions = columns.map((col) => ({ value: col, label: col }));
+
   return (
-    <div className="bg-gray-800 text-white w-1/4 p-4">
-      <h2 className="font-bold mb-4">Select Columns</h2>
-      {columns.map((column) => (
-        <div key={column} className="flex items-center mb-2">
-          <input
-            type="checkbox"
-            checked={selectedColumns.includes(column)}
-            onChange={() => handleCheckboxChange(column)}
-            className="mr-2"
-          />
-          <label>{column}</label>
-        </div>
-      ))}
+    <div className="w-1/4 bg-gray-100 p-4">
+      <h2 className="font-semibold mb-2">Select Columns</h2>
+      <Select
+        options={columnOptions}
+        isMulti
+        onChange={handleColumnChange}
+        className="mt-2"
+      />
     </div>
   );
 };

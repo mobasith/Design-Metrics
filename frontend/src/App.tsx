@@ -7,8 +7,8 @@ import SignUp from "./pages/SignUp";
 import UserDashboard from "./pages/UserDashboard";
 import DesignDetail from "./pages/DesignDetail";
 import DesignerDashboard from "./pages/DesignerDashboard";
-import SubmitFeedback from "./pages/SubmitFeedback"; // Import SubmitFeedback
-import AnalyticsDashboard from "./pages/AnalyticsDashboard"; // Import AnalyticsDashboard
+import SubmitFeedback from "./pages/SubmitFeedback";
+import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import AllDesigns from "./pages/AllDesigns";
 import Dashboard from "./pages/DashBoard";
 
@@ -22,13 +22,8 @@ const App: React.FC = () => {
         <Route path="/user-dashboard" element={<UserDashboard />} />
         <Route path="/designer-dashboard" element={<DesignerDashboard />} />
         <Route path="/design/:id" element={<DesignDetail />} />
-        <Route path="/submit-feedback" element={<SubmitFeedback />} />{" "}
-        {/* New route */}
-        <Route
-          path="/analytics-dashboard"
-          element={<Dashboard />}
-        />{" "}
-        {/* New route */}
+        <Route path="/submit-feedback" element={<SubmitFeedback />} />
+        <Route path="/analytics-dashboard" element={<AnalyticsDashboard />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
       </Routes>

@@ -1,31 +1,85 @@
-import React, { useState } from 'react';
-import Sidebar from '../components/DashBoard/DashBoardSidebar';
-import Header from '../components/DashBoard/DashBoardHeader';
-import GraphContainer from '../components/DashBoard/GraphContainer';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import GridLayout, { WidthProvider } from "react-grid-layout";
+import { Bar, Line, Pie, Scatter, Doughnut } from "react-chartjs-2";
+import Sidebar from "../components/DashBoard/DashBoardSidebar";
+import Header from "../components/DashBoard/DashBoardHeader";
 
-const sampleData = [
-  { name: 'A', 'Column 1': 400, 'Column 2': 240, 'Column 3': 240, 'Column 4': 150 },
-  { name: 'B', 'Column 1': 300, 'Column 2': 456, 'Column 3': 300, 'Column 4': 500 },
-  { name: 'C', 'Column 1': 200, 'Column 2': 300, 'Column 3': 400, 'Column 4': 350 },
-  { name: 'D', 'Column 1': 278, 'Column 2': 390, 'Column 3': 400, 'Column 4': 600 },
-  { name: 'E', 'Column 1': 500, 'Column 2': 250, 'Column 3': 450, 'Column 4': 700 },
-  { name: 'F', 'Column 1': 320, 'Column 2': 180, 'Column 3': 290, 'Column 4': 410 },
-  { name: 'G', 'Column 1': 470, 'Column 2': 240, 'Column 3': 320, 'Column 4': 520 },
-  { name: 'H', 'Column 1': 250, 'Column 2': 300, 'Column 3': 400, 'Column 4': 150 },
-  { name: 'I', 'Column 1': 310, 'Column 2': 400, 'Column 3': 350, 'Column 4': 650 },
-  { name: 'J', 'Column 1': 390, 'Column 2': 450, 'Column 3': 300, 'Column 4': 480 },
+const ResponsiveGridLayout = WidthProvider(GridLayout);
+
+const chartTypes = [
+  { value: "bar", label: "Bar Chart" },
+  { value: "line", label: "Line Chart" },
+  { value: "pie", label: "Pie Chart" },
+  { value: "scatter", label: "Scatter Plot" },
+  { value: "doughnut", label: "Doughnut Chart" },
 ];
 
 const Dashboard: React.FC = () => {
+  const [backendData, setBackendData] = useState<any>({});
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
-  const [selectedGraph, setSelectedGraph] = useState<string>('Bar');
+  const [selectedChartType, setSelectedChartType] = useState("bar");
+
+  // Fetch data from the backend API
+  useEffect(() => {
+    axios
+      .get<any>("https://jsonplaceholder.org/comments")
+      .then((response: { data: any }) => setBackendData(response.data))
+      .catch((error: unknown) => console.error("Error fetching data:", error));
+  }, []);
+
+  // Get dynamic column names from the backend data
+  const columnOptions = Object.keys(backendData).filter((key) =>
+    Array.isArray(backendData[key])
+  );
+
+  // Generate chart data based on user-selected columns
+  const graphData = {
+    labels: backendData[selectedColumns[0]] || [],
+    datasets: [
+      {
+        label: selectedColumns.join(", "),
+        data: backendData[selectedColumns[1]] || [],
+        backgroundColor: "rgba(75, 192, 192, 0.6)",
+      },
+    ],
+  };
 
   return (
     <div className="flex h-screen">
-      <Sidebar selectedColumns={selectedColumns} setSelectedColumns={setSelectedColumns} />
+      {/* Sidebar for Column Selection */}
+      <Sidebar
+        selectedColumns={selectedColumns}
+        setSelectedColumns={setSelectedColumns}
+        columns={columnOptions}
+      />
+
       <div className="flex-1 flex flex-col">
-        <Header setSelectedGraph={setSelectedGraph} />
-        <GraphContainer selectedColumns={selectedColumns} selectedGraph={selectedGraph} data={sampleData} />
+        {/* Header for Chart Type Selection */}
+        <Header setSelectedGraph={setSelectedChartType} />
+
+        <div className="p-4">
+          <ResponsiveGridLayout
+            className="layout"
+            cols={12}
+            rowHeight={30}
+            width={1200}
+            isResizable
+            isDraggable
+          >
+            <div key="graph" className="bg-white border rounded shadow-lg p-4">
+              <h3 className="font-semibold mb-2">Dynamic Chart</h3>
+
+              {selectedChartType === "bar" && <Bar data={graphData} />}
+              {selectedChartType === "line" && <Line data={graphData} />}
+              {selectedChartType === "pie" && <Pie data={graphData} />}
+              {selectedChartType === "scatter" && <Scatter data={graphData} />}
+              {selectedChartType === "doughnut" && (
+                <Doughnut data={graphData} />
+              )}
+            </div>
+          </ResponsiveGridLayout>
+        </div>
       </div>
     </div>
   );

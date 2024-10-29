@@ -1,9 +1,19 @@
-import React from 'react';
-import { BarChart, Bar, PieChart, Pie, LineChart, Line, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import React from "react";
+import {
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  LineChart,
+  Line,
+  ResponsiveContainer,
+  Tooltip,
+  Legend,
+} from "recharts";
 
 interface DataPoint {
-  name: string; 
-  [key: string]: string | number; 
+  name: string;
+  [key: string]: string | number;
 }
 
 interface GraphContainerProps {
@@ -12,60 +22,69 @@ interface GraphContainerProps {
   data: DataPoint[];
 }
 
-const GraphContainer: React.FC<GraphContainerProps> = ({ selectedColumns, selectedGraph, data }) => {
+const GraphContainer: React.FC<GraphContainerProps> = ({
+  selectedColumns,
+  selectedGraph,
+  data,
+}) => {
   const renderGraph = () => {
     switch (selectedGraph) {
-      case 'Bar':
+      case "Bar":
         return (
-          <div className="bg-white shadow-md rounded-lg p-4">
-            <h2 className="text-lg font-semibold mb-2">Bar Chart</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={data}>
-                <Tooltip />
-                <Legend />
-                {selectedColumns.map((column) => (
-                  <Bar key={column} dataKey={column} fill="#4A5568" />
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={data}>
+              <Tooltip />
+              <Legend />
+              {selectedColumns.map((column) => (
+                <Bar key={column} dataKey={column} fill="#4A5568" />
+              ))}
+            </BarChart>
+          </ResponsiveContainer>
         );
-      case 'Pie':
+      case "Pie":
         return (
-          <div className="bg-white shadow-md rounded-lg p-4">
-            <h2 className="text-lg font-semibold mb-2">Pie Chart</h2>
-            <ResponsiveContainer width="100%" height={400}>
-              <PieChart>
-                <Tooltip />
-                <Legend />
-                <Pie data={data} dataKey={selectedColumns[0]} nameKey="name" fill="#4A5568" />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Tooltip />
+              <Legend />
+              <Pie
+                data={data}
+                dataKey={selectedColumns[0]}
+                nameKey="name"
+                fill="#4A5568"
+              />
+            </PieChart>
+          </ResponsiveContainer>
         );
-      case 'Line':
+      case "Line":
         return (
-          <div className="bg-white shadow-md rounded-lg p-4">
-            <h2 className="text-lg font-semibold mb-2">Line Chart</h2>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={data}>
-                <Tooltip />
-                <Legend />
-                {selectedColumns.map((column) => (
-                  <Line key={column} type="monotone" dataKey={column} stroke="#4A5568" />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={data}>
+              <Tooltip />
+              <Legend />
+              {selectedColumns.map((column) => (
+                <Line
+                  key={column}
+                  type="monotone"
+                  dataKey={column}
+                  stroke="#4A5568"
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
         );
       default:
-        return null;
+        return <p>Please select a graph type and columns.</p>;
     }
   };
 
   return (
-    <div className="p-4 grid gap-4">
-      {selectedColumns.length > 0 ? renderGraph() : <p className="text-gray-600">Please select columns to display a graph.</p>}
+    <div className="p-4">
+      {selectedColumns.length > 0 ? (
+        renderGraph()
+      ) : (
+        <p>Select columns to display a graph.</p>
+      )}
     </div>
   );
 };
