@@ -10,12 +10,14 @@ import DesignerDashboard from "./pages/DesignerDashboard";
 import SubmitFeedback from "./pages/SubmitFeedback"; // Import SubmitFeedback
 import AnalyticsDashboard from "./pages/AnalyticsDashboard"; // Import AnalyticsDashboard
 import AllDesigns from "./pages/AllDesigns";
+import Dashboard from "./pages/DashBoard";
 
 const App: React.FC = () => {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/all-designs" element={<AllDesigns />} />
         <Route path="/user-dashboard" element={<UserDashboard />} />
         <Route path="/designer-dashboard" element={<DesignerDashboard />} />
@@ -24,7 +26,7 @@ const App: React.FC = () => {
         {/* New route */}
         <Route
           path="/analytics-dashboard"
-          element={<AnalyticsDashboard />}
+          element={<Dashboard />}
         />{" "}
         {/* New route */}
         <Route path="/signin" element={<SignIn />} />

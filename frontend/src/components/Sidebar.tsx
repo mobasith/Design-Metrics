@@ -52,26 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({ name, profileImage }) => {
         >
           Analytics
         </NavLink>
-        <NavLink
-          to="/profile"
-          className={({ isActive }) =>
-            `block text-lg px-4 py-2 rounded-md transition-colors ${
-              isActive ? "bg-blue-500" : "hover:bg-blue-400"
-            }`
-          }
-        >
-          Profile
-        </NavLink>
-        <NavLink
-          to="/settings"
-          className={({ isActive }) =>
-            `block text-lg px-4 py-2 rounded-md transition-colors ${
-              isActive ? "bg-blue-500" : "hover:bg-blue-400"
-            }`
-          }
-        >
-          Settings
-        </NavLink>
+       
         <NavLink
           to="/submit-feedback"
           className={({ isActive }) =>
@@ -82,6 +63,17 @@ const Sidebar: React.FC<SidebarProps> = ({ name, profileImage }) => {
         >
           Feedback
         </NavLink>
+        <NavLink
+          to="/profile"
+          className={({ isActive }) =>
+            `block text-lg px-4 py-2 rounded-md transition-colors ${
+              isActive ? "bg-blue-500" : "hover:bg-blue-400"
+            }`
+          }
+        >
+          Profile
+        </NavLink>
+        
       </div>
     </div>
   );

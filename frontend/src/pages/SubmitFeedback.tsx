@@ -14,7 +14,7 @@ const SubmitFeedback: React.FC = () => {
   const [designId, setDesignId] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
-  const [showDesigns, setShowDesigns] = useState<boolean>(false); // State to manage the design list visibility
+  const [showDesigns, setShowDesigns] = useState<boolean>(false);
   const navigate = useNavigate();
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -28,14 +28,22 @@ const SubmitFeedback: React.FC = () => {
     navigate("/analytics-dashboard");
   };
 
-  // Filter designs based on the search term
   const filteredDesigns = designs.filter((design) =>
     design.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
-      <h1 className="text-3xl font-bold mb-6">Submit Feedback</h1>
+      <h1 className="text-3xl font-bold mb-4">Submit Feedback</h1>
+
+      {/* Back to Main Page Button */}
+      <button
+        onClick={() => navigate("/")} // Replace with your main page route
+        className="mb-4 w-40 bg-gray-600 text-white rounded-md py-2 font-semibold hover:bg-gray-700 transition duration-200"
+      >
+        Back to Main Page
+      </button>
+
       <form
         className="bg-white p-6 rounded shadow-md w-full max-w-md"
         onSubmit={handleSubmit}
@@ -52,14 +60,13 @@ const SubmitFeedback: React.FC = () => {
             id="search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            onFocus={() => setShowDesigns(true)} // Show the list when focused
-            onBlur={() => setTimeout(() => setShowDesigns(false), 100)} // Hide the list after a slight delay when focus is lost
+            onFocus={() => setShowDesigns(true)}
+            onBlur={() => setTimeout(() => setShowDesigns(false), 100)}
             className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-500"
             placeholder="Type to search..."
           />
         </div>
 
-        {/* Show design list only if there are filtered designs and showDesigns is true */}
         {showDesigns && filteredDesigns.length > 0 && (
           <div className="mb-4">
             <label
@@ -75,8 +82,8 @@ const SubmitFeedback: React.FC = () => {
                   className="cursor-pointer hover:bg-gray-100 p-2"
                   onClick={() => {
                     setDesignId(design.id);
-                    setSearchTerm(""); // Clear search term when selecting
-                    setShowDesigns(false); // Close the design list after selection
+                    setSearchTerm("");
+                    setShowDesigns(false);
                   }}
                 >
                   {design.name}
