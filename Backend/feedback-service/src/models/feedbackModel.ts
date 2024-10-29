@@ -1,20 +1,10 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 interface IFeedback extends Document {
-    design_id: number;
-    user_id: number;
-    rating: number;
-    comment?: string;
-    created_at: Date;
+    [key: string]: any; // Allow dynamic keys
 }
 
-const feedbackSchema: Schema = new Schema({
-    design_id: { type: Number, required: true },
-    user_id: { type: Number, required: true },
-    rating: { type: Number, required: true, min: 1, max: 5 },
-    comment: { type: String,required: true},
-    created_at: { type: Date, default: Date.now }
-});
+const feedbackSchema: Schema = new Schema({}, { strict: false }); // Use `strict: false` for flexible fields
 
 const FeedbackModel = mongoose.model<IFeedback>('Feedback', feedbackSchema);
 

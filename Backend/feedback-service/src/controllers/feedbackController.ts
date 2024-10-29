@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import FeedbackModel from '../models/feedbackModel';
 import exp from 'constants';
+import XLSX from 'xlsx';
+import fs from 'fs';
 
 // Create new feedback
 export const create = async (req: Request, res: Response) => {
@@ -96,5 +98,43 @@ export const getFeedbackByDesignId = async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Error fetching feedback by design ID:', error);
         res.status(500).json({ message: 'An error occurred while fetching feedback.', error });
+    }
+};
+
+//upload excel data as feedback
+// upload excel data as feedback
+export const uploadFeedback = async (req: Request, res: Response) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        // Read Excel file
+        const workbook = XLSX.readFile(req.file.path);
+        const sheetName = workbook.SheetNames[0];
+        const sheetData: unknown[][] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
+
+        // Delete file after reading
+        fs.unlinkSync(req.file.path);
+
+        // Separate headers and rows
+        const headers: string[] = sheetData[0] as string[];
+        const rows: any[][] = sheetData.slice(1) as any[][]; // Cast here to avoid TypeScript error
+
+        // Group values by column
+        const groupedData: { [key: string]: any[] } = {};
+        headers.forEach((header, index) => {
+            groupedData[header] = rows.map((row: any[]) => row[index]);
+        });
+
+        // Store grouped data as a single document in MongoDB
+        const feedback = new FeedbackModel(groupedData);
+        await feedback.save();
+
+        return res.status(201).json({ message: 'Data uploaded successfully', data: groupedData });
+
+    } catch (error) {
+        console.error('Error uploading feedback:', error);
+        return res.status(500).json({ error: 'Failed to upload feedback' });
     }
 };
