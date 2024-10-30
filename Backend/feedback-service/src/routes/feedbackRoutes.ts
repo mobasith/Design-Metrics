@@ -7,7 +7,7 @@ const router = Router();
 const upload = multer({ dest: 'uploads/' });
 
 // Create new feedback
-router.post('/', (req: Request, res: Response) => FeedbackController.create(req, res) as any);
+//router.post('/', (req: Request, res: Response) => FeedbackController.create(req, res) as any);
 
 // Get all feedback
 router.get('/', (req: Request, res: Response) => FeedbackController.getAll(req, res) as any);
