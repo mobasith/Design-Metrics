@@ -17,7 +17,6 @@ const user_controller_1 = __importDefault(require("./user.controller"));
 const axios_1 = __importDefault(require("axios"));
 const multer_1 = __importDefault(require("multer"));
 const form_data_1 = __importDefault(require("form-data"));
-const xlsx_1 = __importDefault(require("xlsx"));
 const fs_1 = __importDefault(require("fs")); // Import fs to delete the uploaded file after processing
 const router = (0, express_1.Router)();
 const upload = (0, multer_1.default)({ dest: 'uploads/' }); // Use temporary storage for uploaded files
@@ -111,26 +110,22 @@ router.post('/feedback/upload', upload.single('feedbackFile'), (req, res) => __a
         return res.status(400).json({ message: 'No file uploaded' });
     }
     try {
-        const workbook = xlsx_1.default.readFile(req.file.path);
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const feedbackData = xlsx_1.default.utils.sheet_to_json(sheet);
-        // Iterate through feedbackData and send each feedback to feedback service
-        for (const feedback of feedbackData) {
-            yield axios_1.default.post('http://localhost:3001/api/feedback', feedback);
-        }
-        // Optionally, delete the uploaded file after processing
+        const formData = new form_data_1.default();
+        formData.append('file', fs_1.default.createReadStream(req.file.path), {
+            filename: req.file.originalname,
+            contentType: req.file.mimetype,
+        });
+        // Send file to feedback-service
+        const response = yield axios_1.default.post('http://localhost:3001/api/feedback/upload', formData, {
+            headers: Object.assign({}, formData.getHeaders()),
+        });
+        // Delete the temporary file after sending
         fs_1.default.unlinkSync(req.file.path);
-        res.status(200).json({ message: 'Feedback uploaded successfully' });
+        res.status(response.status).json(response.data);
     }
     catch (error) {
-        console.error('Error uploading feedback:', error);
-        if (error.response) {
-            res.status(error.response.status).json(error.response.data);
-        }
-        else {
-            res.status(500).json({ message: 'An unknown error occurred' });
-        }
+        console.error('Error uploading feedback file:', error);
+        res.status(500).json({ error: 'An error occurred while uploading feedback' });
     }
 }));
 // Endpoint to get all feedbacks

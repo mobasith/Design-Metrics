@@ -98,33 +98,32 @@ router.get('/designs/user/:userId', async (req: Request, res: Response) => {
 });
 
 // Endpoint to post feedback
-router.post('/feedback/upload', upload.single('feedbackFile'), async (req: Request, res: Response): Promise<any> => {
+router.post('/feedback/upload', upload.single('feedbackFile'), async (req: Request, res: Response):Promise<any>=> {
     if (!req.file) {
         return res.status(400).json({ message: 'No file uploaded' });
     }
 
     try {
-        const workbook = xlsx.readFile(req.file.path);
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const feedbackData = xlsx.utils.sheet_to_json(sheet);
+        const formData = new FormData();
+        formData.append('file', fs.createReadStream(req.file.path), {
+            filename: req.file.originalname,
+            contentType: req.file.mimetype,
+        });
 
-        // Iterate through feedbackData and send each feedback to feedback service
-        for (const feedback of feedbackData) {
-            await axios.post('http://localhost:3001/api/feedback', feedback);
-        }
+        // Send file to feedback-service
+        const response = await axios.post('http://localhost:3001/api/feedback/upload', formData, {
+            headers: {
+                ...formData.getHeaders(),
+            },
+        });
 
-        // Optionally, delete the uploaded file after processing
+        // Delete the temporary file after sending
         fs.unlinkSync(req.file.path);
 
-        res.status(200).json({ message: 'Feedback uploaded successfully' });
+        res.status(response.status).json(response.data);
     } catch (error: any) {
-        console.error('Error uploading feedback:', error);
-        if (error.response) {
-            res.status(error.response.status).json(error.response.data);
-        } else {
-            res.status(500).json({ message: 'An unknown error occurred' });
-        }
+        console.error('Error uploading feedback file:', error);
+        res.status(500).json({ error: 'An error occurred while uploading feedback' });
     }
 });
 
