@@ -11,7 +11,7 @@ connectDB();
 app.use(express.json());
 app.use('/api/designs', designRoutes);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3002;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
