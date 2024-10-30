@@ -8,7 +8,6 @@ import UserDashboard from "./pages/UserDashboard";
 import DesignDetail from "./pages/DesignDetail";
 import DesignerDashboard from "./pages/DesignerDashboard";
 import SubmitFeedback from "./pages/SubmitFeedback";
-import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import AllDesigns from "./pages/AllDesigns";
 import Dashboard from "./pages/DashBoard";
 
@@ -23,7 +22,7 @@ const App: React.FC = () => {
         <Route path="/designer-dashboard" element={<DesignerDashboard />} />
         <Route path="/design/:id" element={<DesignDetail />} />
         <Route path="/submit-feedback" element={<SubmitFeedback />} />
-        <Route path="/analytics-dashboard" element={<AnalyticsDashboard />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
       </Routes>

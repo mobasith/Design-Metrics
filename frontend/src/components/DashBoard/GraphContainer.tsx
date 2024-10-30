@@ -1,25 +1,19 @@
-import React from "react";
 import {
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  LineChart,
+  Legend,
   Line,
+  LineChart,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
-  Legend,
+  BarChart,
+  Bar,
 } from "recharts";
-
-interface DataPoint {
-  name: string;
-  [key: string]: string | number;
-}
 
 interface GraphContainerProps {
   selectedColumns: string[];
   selectedGraph: string;
-  data: DataPoint[];
+  data: any[]; // Adjust the type according to your data structure
 }
 
 const GraphContainer: React.FC<GraphContainerProps> = ({
@@ -31,7 +25,7 @@ const GraphContainer: React.FC<GraphContainerProps> = ({
     switch (selectedGraph) {
       case "Bar":
         return (
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data}>
               <Tooltip />
               <Legend />
@@ -43,22 +37,23 @@ const GraphContainer: React.FC<GraphContainerProps> = ({
         );
       case "Pie":
         return (
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Tooltip />
               <Legend />
               <Pie
                 data={data}
-                dataKey={selectedColumns[0]}
+                dataKey={selectedColumns[0]} // Ensure this is valid
                 nameKey="name"
                 fill="#4A5568"
+                label // Optional: adds labels to the pie chart
               />
             </PieChart>
           </ResponsiveContainer>
         );
       case "Line":
         return (
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data}>
               <Tooltip />
               <Legend />
@@ -79,7 +74,7 @@ const GraphContainer: React.FC<GraphContainerProps> = ({
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4" style={{ width: "100%", height: "80vh" }}> {/* Set a responsive height */}
       {selectedColumns.length > 0 ? (
         renderGraph()
       ) : (
