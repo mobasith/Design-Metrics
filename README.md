@@ -8,18 +8,6 @@ process based on data-driven decisions.
 This is my Capstone Project .
 Ill be developing this project using :
 nodejs with typescript for backend and react with typescript for frontend .
-https://www.figma.com/design/KDdZ1mnl9jFzzxP07l4WkU/Untitled?node-id=14-2&t=sLEKlSFJA3NTDcgb-1
-
-entity "User" {
-    +userId: integer <<PK>>
-    +userName: varchar
-    +email: varchar
-    +password: varchar
-    +roleId: integer
-    +register()
-    +login()
-    +getFeedback()
-} how do i create a user microservice of this using express nodejs with typescript , using mongodb as the database
 
 https://medium.com/@induwara99/a-step-by-step-guide-to-setting-up-a-node-js-project-with-typescript-6df4481cb335
 
