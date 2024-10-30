@@ -1,5 +1,5 @@
 // src/pages/UserDashboard.tsx
-import React from "react";
+import React, { useState } from "react"; // Import useState
 import DesignCard from "../components/DesignCard";
 import Sidebar from "../components/Sidebar";
 import { useNavigate } from "react-router-dom";
@@ -7,26 +7,33 @@ import { useNavigate } from "react-router-dom";
 const UserDashboard: React.FC = () => {
   const navigate = useNavigate();
 
-  const latestDesigns = [
+  // Set up state for latest designs
+  const [latestDesigns, setLatestDesigns] = useState([
     {
       id: 1,
       title: "Design 1",
       description: "Beautiful art",
       imageUrl: "/images/Hero.avif",
+      likes: 0,
+      dislikes: 0,
     },
     {
       id: 2,
       title: "Design 2",
       description: "Modern aesthetics",
       imageUrl: "/images/Hero.avif",
+      likes: 0,
+      dislikes: 0,
     },
     {
       id: 3,
       title: "Design 3",
       description: "Classic vibes",
       imageUrl: "/images/Hero.avif",
+      likes: 0,
+      dislikes: 0,
     },
-  ];
+  ]);
 
   const bestDesigns = [
     {
@@ -34,23 +41,45 @@ const UserDashboard: React.FC = () => {
       title: "Best Design 1",
       description: "Award-winning piece",
       imageUrl: "/images/How.jpg",
+      likes: 0,
+      dislikes: 0,
     },
     {
       id: 5,
       title: "Best Design 2",
       description: "Timeless beauty",
       imageUrl: "/images/How.jpg",
+      likes: 0,
+      dislikes: 0,
     },
     {
       id: 6,
       title: "Best Design 3",
       description: "Elegant and simple",
       imageUrl: "/images/How.jpg",
+      likes: 0,
+      dislikes: 0,
     },
   ];
 
   const handleCardClick = (id: number) => {
     navigate(`/detaildesign/${id}`); // Navigate to the DetailDesign page with the design ID
+  };
+
+  const handleLike = (id: number) => {
+    setLatestDesigns((prevDesigns) =>
+      prevDesigns.map((design) =>
+        design.id === id ? { ...design, likes: design.likes + 1 } : design
+      )
+    );
+  };
+
+  const handleDislike = (id: number) => {
+    setLatestDesigns((prevDesigns) =>
+      prevDesigns.map((design) =>
+        design.id === id ? { ...design, dislikes: design.dislikes + 1 } : design
+      )
+    );
   };
 
   return (
@@ -80,6 +109,8 @@ const UserDashboard: React.FC = () => {
                 key={design.id}
                 {...design}
                 onClick={() => handleCardClick(design.id)} // Handle card click
+                onLike={() => handleLike(design.id)} // Handle like
+                onDislike={() => handleDislike(design.id)} // Handle dislike
               />
             ))}
           </div>
@@ -96,6 +127,8 @@ const UserDashboard: React.FC = () => {
                 key={design.id}
                 {...design}
                 onClick={() => handleCardClick(design.id)} // Handle card click
+                onLike={() => handleLike(design.id)} // Handle like (if you want this functionality here too)
+                onDislike={() => handleDislike(design.id)} // Handle dislike (if you want this functionality here too)
               />
             ))}
           </div>

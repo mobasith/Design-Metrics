@@ -1,12 +1,15 @@
-// src/components/DesignCard.tsx
-import React from "react";
+import React from 'react';
 
 interface DesignCardProps {
   id: number;
   title: string;
   description: string;
   imageUrl: string;
-  onClick: () => void; // Ensure onClick is defined here
+  likes: number;
+  dislikes: number;
+  onClick: () => void;
+  onLike: (id: number) => void;
+  onDislike: (id: number) => void;
 }
 
 const DesignCard: React.FC<DesignCardProps> = ({
@@ -14,17 +17,29 @@ const DesignCard: React.FC<DesignCardProps> = ({
   title,
   description,
   imageUrl,
+  likes,
+  dislikes,
   onClick,
+  onLike,
+  onDislike,
 }) => {
   return (
-    <div
-      className="bg-white rounded shadow hover:shadow-lg transition-shadow cursor-pointer"
-      onClick={onClick}
-    >
-      <img src={imageUrl} alt={title} className="w-full h-48 rounded-t" />
-      <div className="p-4">
-        <h3 className="text-lg font-semibold">{title}</h3>
-        <p>{description}</p>
+    <div className="border rounded-md p-4">
+      <img src={imageUrl} alt={title} className="w-full h-32 object-cover" />
+      <h2 className="text-xl font-semibold">{title}</h2>
+      <p>{description}</p>
+      <div className="flex justify-between items-center mt-2">
+        <div>
+          <button onClick={() => onLike(id)} className="text-blue-500">
+            Like {likes}
+          </button>
+          <button onClick={() => onDislike(id)} className="text-red-500 ml-2">
+            Dislike {dislikes}
+          </button>
+        </div>
+        <button onClick={onClick} className="text-gray-500">
+          View
+        </button>
       </div>
     </div>
   );

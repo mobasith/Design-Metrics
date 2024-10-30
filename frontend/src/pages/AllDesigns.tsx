@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import Sidebar from "../components/Sidebar"; // Adjust the path if necessary
 import DesignCard from "../components/DesignCard"; // Adjust the path if necessary
 
-const designs = [
+const initialDesigns = [
   {
     id: 1,
     title: "Design 1",
@@ -11,83 +11,15 @@ const designs = [
     username: "User1",
     date: "2024-01-01",
     rating: 4,
+    likes: 0,
+    dislikes: 0,
   },
-  {
-    id: 2,
-    title: "Design 2",
-    description: "Description for Design 2",
-    imageUrl: "/images/Hero.avif",
-    username: "User2",
-    date: "2024-02-01",
-    rating: 5,
-  },
-  {
-    id: 3,
-    title: "Design 3",
-    description: "Description for Design 3",
-    imageUrl: "/images/Hero.avif",
-    username: "User1",
-    date: "2024-03-01",
-    rating: 3,
-  },
-  {
-    id: 4,
-    title: "Design 4",
-    description: "Description for Design 3",
-    imageUrl: "/images/Hero.avif",
-    username: "User1",
-    date: "2023-03-01",
-    rating: 3.5,
-  },
-  {
-    id: 5,
-    title: "Design 5",
-    description: "Description for Design 3",
-    imageUrl: "/images/Hero.avif",
-    username: "User1",
-    date: "2024-03-01",
-    rating: 5,
-  },
-  {
-    id: 3,
-    title: "Design 3",
-    description: "Description for Design 3",
-    imageUrl: "/images/Hero.avif",
-    username: "User1",
-    date: "2024-03-01",
-    rating: 3,
-  },
-  {
-    id: 3,
-    title: "Design 3",
-    description: "Description for Design 3",
-    imageUrl: "/images/Hero.avif",
-    username: "User1",
-    date: "2024-03-01",
-    rating: 3,
-  },
-  {
-    id: 3,
-    title: "Design 3",
-    description: "Description for Design 3",
-    imageUrl: "/images/Hero.avif",
-    username: "User1",
-    date: "2024-03-01",
-    rating: 3,
-  },
-
-  {
-    id: 3,
-    title: "Design 3",
-    description: "Description for Design 3",
-    imageUrl: "/images/Hero.avif",
-    username: "User1",
-    date: "2024-03-01",
-    rating: 3,
-  },
+  // ... other designs
 ];
 
 const AllDesigns: React.FC = () => {
+  const [designs, setDesigns] = useState(initialDesigns);
+  const [userFeedback, setUserFeedback] = useState<{ [key: number]: { liked: boolean; disliked: boolean } }>({});
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [dateFilter, setDateFilter] = useState<string>("");
   const [ratingFilter, setRatingFilter] = useState<number | "">("");
@@ -119,6 +51,46 @@ const AllDesigns: React.FC = () => {
 
   const handleCardClick = (id: number) => {
     console.log(`Design ${id} clicked`);
+  };
+
+  const handleLike = (id: number) => {
+    // Check if the user has already liked the design
+    const userAction = userFeedback[id];
+
+    // Prevent liking if the user has already liked or disliked
+    if (!userAction || (!userAction.liked && !userAction.disliked)) {
+      setDesigns((prevDesigns) =>
+        prevDesigns.map((design) =>
+          design.id === id ? { ...design, likes: design.likes + 1 } : design
+        )
+      );
+
+      // Update user feedback
+      setUserFeedback((prev) => ({
+        ...prev,
+        [id]: { liked: true, disliked: false }, // Mark as liked
+      }));
+    }
+  };
+
+  const handleDislike = (id: number) => {
+    // Check if the user has already disliked the design
+    const userAction = userFeedback[id];
+
+    // Prevent disliking if the user has already liked or disliked
+    if (!userAction || (!userAction.liked && !userAction.disliked)) {
+      setDesigns((prevDesigns) =>
+        prevDesigns.map((design) =>
+          design.id === id ? { ...design, dislikes: design.dislikes + 1 } : design
+        )
+      );
+
+      // Update user feedback
+      setUserFeedback((prev) => ({
+        ...prev,
+        [id]: { liked: false, disliked: true }, // Mark as disliked
+      }));
+    }
   };
 
   return (
@@ -175,7 +147,11 @@ const AllDesigns: React.FC = () => {
                 title={design.title}
                 description={design.description}
                 imageUrl={design.imageUrl}
+                likes={design.likes}
+                dislikes={design.dislikes}
                 onClick={() => handleCardClick(design.id)}
+                onLike={() => handleLike(design.id)}
+                onDislike={() => handleDislike(design.id)}
               />
             ))}
           </div>
