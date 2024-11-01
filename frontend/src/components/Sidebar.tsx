@@ -43,7 +43,7 @@ const Sidebar: React.FC<SidebarProps> = ({ name, profileImage }) => {
           Designs
         </NavLink>
         <NavLink
-          to="/analytics-dashboard"
+          to="/dashboard"
           className={({ isActive }) =>
             `block text-lg px-4 py-2 rounded-md transition-colors ${
               isActive ? "bg-blue-500" : "hover:bg-blue-400"

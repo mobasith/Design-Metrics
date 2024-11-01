@@ -22,7 +22,6 @@ const App: React.FC = () => {
         <Route path="/designer-dashboard" element={<DesignerDashboard />} />
         <Route path="/design/:id" element={<DesignDetail />} />
         <Route path="/submit-feedback" element={<SubmitFeedback />} />
-        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
       </Routes>
