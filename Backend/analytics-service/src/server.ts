@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import analyticsRoutes from './routes/analyticsRoutes';
 
+
 dotenv.config();
 
 const app = express();

@@ -24,13 +24,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importStar(require("mongoose"));
-const analyticsSchema = new mongoose_1.Schema({
-    designId: { type: Number, required: true },
-    totalFeedbackCount: { type: Number, required: true },
-    averageRating: { type: Number, required: true },
-    positiveFeedbackCount: { type: Number, required: true },
-    negativeFeedbackCount: { type: Number, required: true },
-    feedbackSummary: { type: [String], required: true },
-    createdAt: { type: Date, default: Date.now },
-});
-exports.default = mongoose_1.default.model('Analytics', analyticsSchema);
+const analyticsSchema = new mongoose_1.Schema({}, { strict: false }); // Allow dynamic fields
+const AnalyticsModel = mongoose_1.default.model('Analytics', analyticsSchema);
+exports.default = AnalyticsModel;

@@ -30,4 +30,7 @@ router.post('/upload', upload.single('file'), (req: Request, res: Response) => {
     FeedbackController.uploadFeedback(req, res);
 });
 
+//get a feedback by mongo id
+router.get('/feedback/mongoId/:mongoId', (req:Request,res: Response) => FeedbackController.getFeedbackByMongoId(req, res) as any);
+
 export default router;

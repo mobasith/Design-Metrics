@@ -15,7 +15,7 @@ mongoose_1.default.connect(MONGO_URI)
     .then(() => console.log('MongoDB connected'))
     .catch(err => console.error('MongoDB connection error:', err));
 app.use('/api/analytics', analyticsRoutes_1.default);
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3003;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });

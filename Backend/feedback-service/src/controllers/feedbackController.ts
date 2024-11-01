@@ -138,3 +138,22 @@ export const uploadFeedback = async (req: Request, res: Response) => {
         return res.status(500).json({ error: 'Failed to upload feedback' });
     }
 };
+// Get feedback by MongoDB ID (automatically assigned)
+export const getFeedbackByMongoId = async (req: Request, res: Response) => {
+    const { mongoId } = req.params; // Expecting the ID to be passed in the request parameters
+
+    try {
+        // Find feedback using the provided MongoDB ID
+        const feedback = await FeedbackModel.findById(mongoId);
+        if (!feedback) {
+            return res.status(404).json({ message: "Feedback not found with the provided MongoDB ID" });
+        }
+        return res.status(200).json(feedback);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            return res.status(500).json({ error: error.message || "Error in getting feedback by MongoDB ID" });
+        }
+        return res.status(500).json({ error: "Error in getting feedback by MongoDB ID" });
+    }
+};
+
