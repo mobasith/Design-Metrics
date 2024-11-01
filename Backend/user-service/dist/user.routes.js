@@ -18,6 +18,7 @@ const axios_1 = __importDefault(require("axios"));
 const multer_1 = __importDefault(require("multer"));
 const form_data_1 = __importDefault(require("form-data"));
 const fs_1 = __importDefault(require("fs")); // Import fs to delete the uploaded file after processing
+const authorizeDesigner_1 = require("./middleware/authorizeDesigner"); // Correct for named export
 const router = (0, express_1.Router)();
 const upload = (0, multer_1.default)({ dest: 'uploads/' }); // Use temporary storage for uploaded files
 // User Registration and Login Routes
@@ -27,57 +28,48 @@ router.get('/', (req, res) => user_controller_1.default.getAllUsers(req, res));
 router.put('/update/:userId', (req, res) => user_controller_1.default.updateUser(req, res));
 router.get('/:userId', (req, res) => user_controller_1.default.getOneUser(req, res));
 router.delete('/delete/:userId', (req, res) => user_controller_1.default.deleteUser(req, res));
-// New endpoint for creating a design
-router.post('/designs', upload.single('designInput'), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+// New endpoint for creating a design (designer-only)
+router.post('/designs', authorizeDesigner_1.authorizeDesigner, upload.single('designInput'), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { designId, designTitle, description, createdById, createdByName } = req.body;
     const designInput = req.file;
     try {
+        // Check if required fields are present
+        if (!designId || !designTitle || !description || !createdById || !createdByName) {
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
         const formData = new form_data_1.default();
         formData.append('designId', designId);
         formData.append('designTitle', designTitle);
         formData.append('description', description);
         formData.append('createdById', createdById);
         formData.append('createdByName', createdByName);
+        // Only append file if designInput exists
         if (designInput) {
-            formData.append('designInput', designInput.buffer, {
+            formData.append('designInput', fs_1.default.createReadStream(designInput.path), {
                 filename: designInput.originalname,
                 contentType: designInput.mimetype,
             });
         }
-        const response = yield axios_1.default.post('http://localhost:5000/api/designs', formData, {
+        const response = yield axios_1.default.post('http://localhost:3002/api/designs', formData, {
             headers: Object.assign({}, formData.getHeaders()),
         });
+        // Delete the temporary file after sending, if it exists
+        if (designInput) {
+            fs_1.default.unlinkSync(designInput.path);
+        }
         res.status(response.status).json(response.data);
     }
     catch (error) {
         console.error('Error posting design:', error);
+        console.error('Error details:', error.toJSON ? error.toJSON() : error);
         if (error.response) {
             res.status(error.response.status).json(error.response.data);
         }
-        else {
-            res.status(500).json({ message: 'An unknown error occurred' });
-        }
-    }
-}));
-// New endpoint to get all designs
-router.get('/designs/getdesigns', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const response = yield axios_1.default.get('http://localhost:5000/api/designs');
-        const formattedResponse = response.data.map((design) => ({
-            designTitle: design.designTitle,
-            description: design.description,
-            createdByName: design.createdByName,
-            design: design.designInput // Include the design input if needed
-        }));
-        res.status(response.status).json(formattedResponse);
-    }
-    catch (error) {
-        console.error('Error fetching designs:', error);
-        if (error.response) {
-            res.status(error.response.status).json(error.response.data);
+        else if (error.request) {
+            res.status(500).json({ message: 'No response received from server', details: error.request });
         }
         else {
-            res.status(500).json({ message: 'An unknown error occurred' });
+            res.status(500).json({ message: 'An error occurred during request setup', details: error.message });
         }
     }
 }));
@@ -85,7 +77,7 @@ router.get('/designs/getdesigns', (req, res) => __awaiter(void 0, void 0, void 0
 router.get('/designs/user/:userId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { userId } = req.params;
     try {
-        const response = yield axios_1.default.get(`http://localhost:5000/api/designs/user/${userId}`);
+        const response = yield axios_1.default.get(`http://localhost:3002/api/designs/user/${userId}`);
         const formattedResponse = response.data.map((design) => ({
             designTitle: design.designTitle,
             description: design.description,

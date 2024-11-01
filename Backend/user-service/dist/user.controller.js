@@ -43,7 +43,8 @@ class UserController {
                 if (!user || !(yield bcryptjs_1.default.compare(password, user.password))) {
                     return res.status(401).json({ message: 'Invalid credentials' });
                 }
-                const token = jsonwebtoken_1.default.sign({ userId: user.userId }, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '1h' });
+                // Include roleId in the token payload
+                const token = jsonwebtoken_1.default.sign({ userId: user.userId, roleId: user.roleId }, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '1h' });
                 res.json({ token });
             }
             catch (error) {

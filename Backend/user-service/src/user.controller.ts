@@ -30,13 +30,19 @@ class UserController {
             if (!user || !(await bcrypt.compare(password, user.password))) {
                 return res.status(401).json({ message: 'Invalid credentials' });
             }
-
-            const token = jwt.sign({ userId: user.userId }, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '1h' });
+    
+            // Include roleId in the token payload
+            const token = jwt.sign(
+                { userId: user.userId, roleId: user.roleId },
+                process.env.JWT_SECRET || 'your_jwt_secret',
+                { expiresIn: '1h' }
+            );
             res.json({ token });
-        } catch (error:any) {
+        } catch (error: any) {
             res.status(500).json({ error: error.message });
         }
     }
+    
 
     async getAllUsers(req: Request, res: Response) {
         try {
