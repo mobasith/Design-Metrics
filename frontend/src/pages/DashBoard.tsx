@@ -1,11 +1,31 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
-  LineChart, Line, BarChart, Bar, PieChart, Pie, ScatterChart, Scatter,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell, ResponsiveContainer
-} from 'recharts';
-import { ChevronDown, BarChart2, TrendingUp, PieChart as PieChartIcon, Disc, ScatterChart as ScatterPlotIcon } from 'lucide-react';
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  ScatterChart,
+  Scatter,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  Cell,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  ChevronDown,
+  BarChart2,
+  TrendingUp,
+  PieChart as PieChartIcon,
+  Disc,
+  ScatterChart as ScatterPlotIcon,
+} from "lucide-react";
 
-type ChartType = 'bar' | 'line' | 'pie' | 'scatter' | 'donut';
+type ChartType = "bar" | "line" | "pie" | "scatter" | "donut";
 
 interface ArrayData {
   [key: string]: Array<string | number>;
@@ -24,12 +44,25 @@ interface ChartProps {
 }
 
 const COLORS = [
-  '#6366f1', '#ec4899', '#8b5cf6', '#14b8a6', '#f59e0b',
-  '#84cc16', '#ef4444', '#06b6d4', '#f97316', '#8b5cf6'
+  "#6366f1",
+  "#ec4899",
+  "#8b5cf6",
+  "#14b8a6",
+  "#f59e0b",
+  "#84cc16",
+  "#ef4444",
+  "#06b6d4",
+  "#f97316",
+  "#8b5cf6",
 ];
 
-const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className }) => (
-  <div className={`bg-white rounded-xl shadow-md border border-gray-100 ${className}`}>
+const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({
+  children,
+  className,
+}) => (
+  <div
+    className={`bg-white rounded-xl shadow-md border border-gray-100 ${className}`}
+  >
     {children}
   </div>
 );
@@ -69,16 +102,24 @@ const CustomSelect: React.FC<{
     <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-500">
       {icon}
     </div>
-    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+    <ChevronDown
+      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+      size={18}
+    />
   </div>
 );
 
-const DynamicChart: React.FC<ChartProps> = ({ data, xAxis, yAxis, chartType }) => {
+const DynamicChart: React.FC<ChartProps> = ({
+  data,
+  xAxis,
+  yAxis,
+  chartType,
+}) => {
   const processData = (): ChartDataPoint[] => {
     if (!data || !data[xAxis] || !data[yAxis]) return [];
     return data[xAxis].map((value, index) => ({
       name: value,
-      value: data[yAxis][index]
+      value: data[yAxis][index],
     }));
   };
 
@@ -86,47 +127,60 @@ const DynamicChart: React.FC<ChartProps> = ({ data, xAxis, yAxis, chartType }) =
 
   const renderChart = (): JSX.Element => {
     const commonProps = {
-      className: "mt-4"
+      className: "mt-4",
     };
 
     switch (chartType) {
-      case 'bar':
+      case "bar":
         return (
           <BarChart {...commonProps} data={processedData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis dataKey="name" tick={{ fill: '#6b7280' }} />
-            <YAxis tick={{ fill: '#6b7280' }} />
-            <Tooltip 
-              contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+            <XAxis dataKey="name" tick={{ fill: "#6b7280" }} />
+            <YAxis tick={{ fill: "#6b7280" }} />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "#fff",
+                border: "1px solid #e5e7eb",
+                borderRadius: "8px",
+              }}
             />
             <Legend />
-            <Bar dataKey="value" fill="#6366f1" name={yAxis} radius={[4, 4, 0, 0]} />
+            <Bar
+              dataKey="value"
+              fill="#6366f1"
+              name={yAxis}
+              radius={[4, 4, 0, 0]}
+            />
           </BarChart>
         );
 
-      case 'line':
+      case "line":
         return (
           <LineChart {...commonProps} data={processedData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis dataKey="name" tick={{ fill: '#6b7280' }} />
-            <YAxis tick={{ fill: '#6b7280' }} />
-            <Tooltip 
-              contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+            <XAxis dataKey="name" tick={{ fill: "#6b7280" }} />
+            <YAxis tick={{ fill: "#6b7280" }} />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "#fff",
+                border: "1px solid #e5e7eb",
+                borderRadius: "8px",
+              }}
             />
             <Legend />
-            <Line 
-              type="monotone" 
-              dataKey="value" 
-              name={yAxis} 
+            <Line
+              type="monotone"
+              dataKey="value"
+              name={yAxis}
               stroke="#6366f1"
               strokeWidth={2}
-              dot={{ fill: '#6366f1', strokeWidth: 2 }}
+              dot={{ fill: "#6366f1", strokeWidth: 2 }}
             />
           </LineChart>
         );
 
-      case 'pie':
-      case 'donut':
+      case "pie":
+      case "donut":
         return (
           <PieChart {...commonProps}>
             <Pie
@@ -135,36 +189,47 @@ const DynamicChart: React.FC<ChartProps> = ({ data, xAxis, yAxis, chartType }) =
               nameKey="name"
               cx="50%"
               cy="50%"
-              innerRadius={chartType === 'donut' ? 80 : 0}
+              innerRadius={chartType === "donut" ? 80 : 0}
               outerRadius={140}
               label
               paddingAngle={2}
             >
               {processedData.map((_, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                <Cell
+                  key={`cell-${index}`}
+                  fill={COLORS[index % COLORS.length]}
+                />
               ))}
             </Pie>
-            <Tooltip 
-              contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "#fff",
+                border: "1px solid #e5e7eb",
+                borderRadius: "8px",
+              }}
             />
             <Legend />
           </PieChart>
         );
 
-      case 'scatter':
+      case "scatter":
         return (
           <ScatterChart {...commonProps}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis dataKey="name" name={xAxis} tick={{ fill: '#6b7280' }} />
-            <YAxis dataKey="value" name={yAxis} tick={{ fill: '#6b7280' }} />
-            <Tooltip 
-              cursor={{ strokeDasharray: '3 3' }}
-              contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+            <XAxis dataKey="name" name={xAxis} tick={{ fill: "#6b7280" }} />
+            <YAxis dataKey="value" name={yAxis} tick={{ fill: "#6b7280" }} />
+            <Tooltip
+              cursor={{ strokeDasharray: "3 3" }}
+              contentStyle={{
+                backgroundColor: "#fff",
+                border: "1px solid #e5e7eb",
+                borderRadius: "8px",
+              }}
             />
             <Legend />
-            <Scatter 
-              name={`${xAxis} vs ${yAxis}`} 
-              data={processedData} 
+            <Scatter
+              name={`${xAxis} vs ${yAxis}`}
+              data={processedData}
               fill="#6366f1"
             />
           </ScatterChart>
@@ -184,7 +249,9 @@ const DynamicChart: React.FC<ChartProps> = ({ data, xAxis, yAxis, chartType }) =
       <div className="flex h-64 items-center justify-center">
         <div className="text-gray-500 text-center">
           <p className="text-lg font-medium">No data available</p>
-          <p className="text-sm mt-2">Please select different axes or check your data source</p>
+          <p className="text-sm mt-2">
+            Please select different axes or check your data source
+          </p>
         </div>
       </div>
     );
@@ -202,9 +269,9 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [columns, setColumns] = useState<string[]>([]);
-  const [selectedXAxis, setSelectedXAxis] = useState<string>('');
-  const [selectedYAxis, setSelectedYAxis] = useState<string>('');
-  const [chartType, setChartType] = useState<ChartType>('bar');
+  const [selectedXAxis, setSelectedXAxis] = useState<string>("");
+  const [selectedYAxis, setSelectedYAxis] = useState<string>("");
+  const [chartType, setChartType] = useState<ChartType>("bar");
 
   useEffect(() => {
     fetchData();
@@ -212,36 +279,41 @@ const Dashboard: React.FC = () => {
 
   const fetchData = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/feedback');
+      const response = await fetch("http://localhost:3005/api/feedback");
       const jsonData: ArrayData[] = await response.json();
 
       if (Array.isArray(jsonData) && jsonData.length > 0) {
         const arrayData = jsonData[0];
-        const availableColumns = Object.keys(arrayData).filter(key => 
-          Array.isArray(arrayData[key]) && !['_id', '__v'].includes(key)
+        const availableColumns = Object.keys(arrayData).filter(
+          (key) =>
+            Array.isArray(arrayData[key]) && !["_id", "__v"].includes(key)
         );
 
         setData(arrayData);
         setColumns(availableColumns);
-        
+
         if (availableColumns.length >= 2) {
           setSelectedXAxis(availableColumns[0]);
           setSelectedYAxis(availableColumns[1]);
         }
       }
     } catch (err) {
-      setError('Failed to fetch data. Please try again later.');
+      setError("Failed to fetch data. Please try again later.");
     } finally {
       setLoading(false);
     }
   };
 
   const chartTypes = [
-    { value: 'bar', label: 'Bar Chart', icon: <BarChart2 size={18} /> },
-    { value: 'line', label: 'Line Chart', icon: <TrendingUp size={18} /> },
-    { value: 'pie', label: 'Pie Chart', icon: <PieChartIcon size={18} /> },
-    { value: 'donut', label: 'Donut Chart', icon: <Disc size={18} /> },
-    { value: 'scatter', label: 'Scatter Plot', icon: <ScatterPlotIcon size={18} /> }
+    { value: "bar", label: "Bar Chart", icon: <BarChart2 size={18} /> },
+    { value: "line", label: "Line Chart", icon: <TrendingUp size={18} /> },
+    { value: "pie", label: "Pie Chart", icon: <PieChartIcon size={18} /> },
+    { value: "donut", label: "Donut Chart", icon: <Disc size={18} /> },
+    {
+      value: "scatter",
+      label: "Scatter Plot",
+      icon: <ScatterPlotIcon size={18} />,
+    },
   ];
 
   if (loading) {
@@ -256,9 +328,11 @@ const Dashboard: React.FC = () => {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          <div className="text-red-500 text-xl font-semibold mb-2">Error Loading Data</div>
+          <div className="text-red-500 text-xl font-semibold mb-2">
+            Error Loading Data
+          </div>
           <div className="text-gray-600">{error}</div>
-          <button 
+          <button
             onClick={fetchData}
             className="mt-4 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors"
           >
@@ -288,14 +362,14 @@ const Dashboard: React.FC = () => {
               <CustomSelect
                 value={selectedXAxis}
                 onChange={setSelectedXAxis}
-                options={columns.map(col => ({ value: col, label: col }))}
+                options={columns.map((col) => ({ value: col, label: col }))}
                 placeholder="Select X-Axis"
                 icon={<ChevronDown size={18} />}
               />
               <CustomSelect
                 value={selectedYAxis}
                 onChange={setSelectedYAxis}
-                options={columns.map(col => ({ value: col, label: col }))}
+                options={columns.map((col) => ({ value: col, label: col }))}
                 placeholder="Select Y-Axis"
                 icon={<ChevronDown size={18} />}
               />
@@ -315,31 +389,41 @@ const Dashboard: React.FC = () => {
             ) : (
               <div className="flex h-64 items-center justify-center">
                 <div className="text-center">
-                  <p className="text-gray-500 text-lg font-medium">No Chart Generated</p>
-                  <p className="text-gray-400 mt-2">Please select both axes to generate a chart</p>
+                  <p className="text-gray-500 text-lg font-medium">
+                    No Chart Generated
+                  </p>
+                  <p className="text-gray-400 mt-2">
+                    Please select both axes to generate a chart
+                  </p>
                 </div>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {process.env.NODE_ENV === 'development' && (
+        {process.env.NODE_ENV === "development" && (
           <Card className="mt-6">
             <CardContent>
               <div className="space-y-2">
-                <h3 className="font-semibold text-gray-900">Debug Information</h3>
+                <h3 className="font-semibold text-gray-900">
+                  Debug Information
+                </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <div className="text-gray-500">Available Columns</div>
-                    <div className="font-medium mt-1">{columns.join(', ')}</div>
+                    <div className="font-medium mt-1">{columns.join(", ")}</div>
                   </div>
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <div className="text-gray-500">Selected X-Axis</div>
-                    <div className="font-medium mt-1">{selectedXAxis || 'None'}</div>
+                    <div className="font-medium mt-1">
+                      {selectedXAxis || "None"}
+                    </div>
                   </div>
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <div className="text-gray-500">Selected Y-Axis</div>
-                    <div className="font-medium mt-1">{selectedYAxis || 'None'}</div>
+                    <div className="font-medium mt-1">
+                      {selectedYAxis || "None"}
+                    </div>
                   </div>
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <div className="text-gray-500">Chart Type</div>
