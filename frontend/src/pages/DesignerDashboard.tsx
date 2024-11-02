@@ -1,187 +1,266 @@
 import React, { useState } from "react";
-import Sidebar from "../components/Sidebar";
 import { Line, Bar, Pie } from "react-chartjs-2";
 import { Chart, registerables } from "chart.js";
-import { AiOutlineBell } from "react-icons/ai";
+import { 
+  Bell, 
+  TrendingUp, 
+  Star, 
+  Users, 
+  Award,
+  ChevronDown,
+  Calendar
+} from "lucide-react";
 
-// Register all chart.js components
 Chart.register(...registerables);
 
+// Define the props interface for MetricCard
+interface MetricCardProps {
+  title: string;
+  value: string;
+  icon: React.FC<React.SVGProps<SVGSVGElement>>;
+  trend?: number | null; // Optional prop
+}
+
 const DesignerDashboard: React.FC = () => {
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState("This Month");
+
   const notifications = [
-    { id: 1, message: "New design submission received." },
-    { id: 2, message: "Your design has been approved." },
-    { id: 3, message: "Feedback received on Design 2." },
+    { 
+      id: 1, 
+      message: "New design submission received", 
+      time: "2 mins ago",
+      type: "new"
+    },
+    { 
+      id: 2, 
+      message: "Your design has been approved", 
+      time: "1 hour ago",
+      type: "success"
+    },
+    { 
+      id: 3, 
+      message: "Feedback received on Design 2", 
+      time: "3 hours ago",
+      type: "feedback"
+    },
   ];
 
-  const [showNotifications, setShowNotifications] = useState(false);
-
-  // Sample performance data for the charts
+  // Enhanced chart configurations
   const lineData = {
     labels: ["January", "February", "March", "April", "May"],
     datasets: [
       {
-        label: "Line Performance",
+        label: "Performance Score",
         data: [65, 59, 80, 81, 56],
-        fill: false,
-        backgroundColor: "rgba(75,192,192,0.4)",
-        borderColor: "rgba(75,192,192,1)",
+        fill: true,
+        backgroundColor: "rgba(99, 102, 241, 0.1)",
+        borderColor: "rgba(99, 102, 241, 1)",
+        tension: 0.4,
+        pointRadius: 4,
+        pointBackgroundColor: "white",
+        pointBorderColor: "rgba(99, 102, 241, 1)",
+        pointBorderWidth: 2,
       },
     ],
   };
 
   const barData = {
-    labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
+    labels: ["UI Design", "UX Design", "Graphic Design", "Web Design", "Logo Design", "Icon Design"],
     datasets: [
       {
-        label: "Votes",
-        data: [12, 19, 3, 5, 2, 3],
-        backgroundColor: [
-          "rgba(255, 99, 132, 0.2)",
-          "rgba(54, 162, 235, 0.2)",
-          "rgba(255, 206, 86, 0.2)",
-          "rgba(75, 192, 192, 0.2)",
-          "rgba(153, 102, 255, 0.2)",
-          "rgba(255, 159, 64, 0.2)",
-        ],
-        borderColor: [
-          "rgba(255, 99, 132, 1)",
-          "rgba(54, 162, 235, 1)",
-          "rgba(255, 206, 86, 1)",
-          "rgba(75, 192, 192, 1)",
-          "rgba(153, 102, 255, 1)",
-          "rgba(255, 159, 64, 1)",
-        ],
-        borderWidth: 1,
+        label: "Project Completion Rate",
+        data: [92, 88, 85, 84, 90, 87],
+        backgroundColor: "rgba(99, 102, 241, 0.8)",
+        borderRadius: 6,
       },
     ],
   };
 
   const pieData = {
-    labels: ["Group A", "Group B", "Group C"],
+    labels: ["Excellent", "Good", "Average"],
     datasets: [
       {
-        label: "My First Dataset",
-        data: [300, 50, 100],
+        data: [63, 28, 9],
         backgroundColor: [
-          "rgba(255, 99, 132, 0.2)",
-          "rgba(54, 162, 235, 0.2)",
-          "rgba(255, 206, 86, 0.2)",
+          "rgba(99, 102, 241, 0.8)",
+          "rgba(147, 51, 234, 0.8)",
+          "rgba(236, 72, 153, 0.8)",
         ],
-        borderColor: [
-          "rgba(255, 99, 132, 1)",
-          "rgba(54, 162, 235, 1)",
-          "rgba(255, 206, 86, 1)",
-        ],
-        borderWidth: 1,
+        borderWidth: 0,
       },
     ],
   };
 
   const histogramData = {
-    labels: ["0-10", "10-20", "20-30", "30-40", "40-50"],
+    labels: ["0-2", "2-4", "4-6", "6-8", "8-10"],
     datasets: [
       {
-        label: "Histogram Data",
-        data: [5, 10, 15, 20, 25],
-        backgroundColor: "rgba(75,192,192,0.6)",
+        label: "Review Distribution",
+        data: [5, 15, 35, 30, 15],
+        backgroundColor: "rgba(99, 102, 241, 0.8)",
+        borderRadius: 6,
       },
     ],
   };
 
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false, // Maintain aspect ratio for better sizing
+    plugins: {
+      legend: {
+        position: 'bottom' as const,
+        labels: {
+          boxWidth: 12,
+          usePointStyle: true,
+          font: {
+            size: 12
+          }
+        }
+      },
+      tooltip: {
+        backgroundColor: 'white',
+        titleColor: '#1f2937',
+        bodyColor: '#1f2937',
+        borderColor: '#e5e7eb',
+        borderWidth: 1,
+        padding: 12,
+        boxWidth: 10,
+        usePointStyle: true,
+        boxPadding: 3
+      }
+    }
+  };
+
+  const MetricCard: React.FC<MetricCardProps> = ({ title, value, icon: Icon, trend = null }) => (
+    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 transition-all hover:shadow-md">
+      <div className="flex items-center justify-between mb-4">
+        <div className="p-2 bg-indigo-50 rounded-lg">
+          <Icon className="h-6 w-6 text-indigo-500" />
+        </div>
+        {trend && (
+          <span className={`text-sm font-medium ${trend >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+            {trend > 0 ? '+' : ''}{trend}%
+          </span>
+        )}
+      </div>
+      <h3 className="text-gray-500 text-sm font-medium mb-2">{title}</h3>
+      <p className="text-2xl font-bold text-gray-900">{value}</p>
+    </div>
+  );
+
   return (
     <div className="flex">
-      <Sidebar name="Designer Name" profileImage="/images/user.png" />
+      <div className="flex-1 min-h-screen bg-gray-50 p-8">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Designer Dashboard</h1>
+            <p className="text-gray-500 mt-1">Welcome back, Sarah Anderson</p>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <button
+                className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50"
+                onClick={() => {}}
+              >
+                <Calendar className="h-4 w-4" />
+                <span>{selectedPeriod}</span>
+                <ChevronDown className="h-4 w-4" />
+              </button>
+            </div>
 
-      <div className="flex-1 ml-64 min-h-screen bg-gray-50 p-10">
-        <div className="flex justify-between items-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-800 tracking-tight">
-            Designer Dashboard
-          </h1>
-          <div
-            className="relative cursor-pointer"
-            onClick={() => setShowNotifications(!showNotifications)}
-          >
-            <AiOutlineBell className="text-gray-800 text-2xl" />
-            {notifications.length > 0 && (
-              <span className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold px-2 rounded-full">
-                {notifications.length}
-              </span>
-            )}
-            {showNotifications && (
-              <div className="absolute right-0 z-10 mt-2 w-48 bg-white rounded shadow-lg p-2">
-                <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                  Notifications
-                </h3>
-                <ul className="space-y-2">
-                  {notifications.map((notification) => (
-                    <li
-                      key={notification.id}
-                      className="p-2 bg-gray-100 rounded hover:bg-gray-200 transition-colors"
-                    >
-                      {notification.message}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <div className="relative">
+              <button
+                className="relative p-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50"
+                onClick={() => setShowNotifications(!showNotifications)}
+              >
+                <Bell className="h-5 w-5" />
+                {notifications.length > 0 && (
+                  <span className="absolute -top-1 -right-1 h-5 w-5 bg-indigo-500 text-white text-xs flex items-center justify-center rounded-full">
+                    {notifications.length}
+                  </span>
+                )}
+              </button>
+
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50">
+                  <div className="p-4 border-b border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold text-gray-900">Notifications</h3>
+                      <span className="text-xs text-gray-500">Mark all as read</span>
+                    </div>
+                  </div>
+                  <div className="max-h-96 overflow-y-auto">
+                    {notifications.map((notification) => (
+                      <div
+                        key={notification.id}
+                        className="p-4 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-100 last:border-0"
+                      >
+                        <div className="flex items-start space-x-3">
+                          <div className={`p-2 rounded-lg ${
+                            notification.type === 'new' ? 'bg-blue-50 text-blue-500' :
+                            notification.type === 'success' ? 'bg-green-50 text-green-500' :
+                            'bg-purple-50 text-purple-500'
+                          }`}>
+                            <Bell className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-900">{notification.message}</p>
+                            <span className="text-xs text-gray-500">{notification.time}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Metrics Boxes */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div className="bg-white p-4 rounded shadow text-center">
-            <h3 className="text-lg font-semibold">Average Design Rating</h3>
-            <p className="text-2xl font-bold">4.5</p>
-          </div>
-          <div className="bg-white p-4 rounded shadow text-center">
-            <h3 className="text-lg font-semibold">Total Ratings</h3>
-            <p className="text-2xl font-bold">150</p>
-          </div>
-          <div className="bg-white p-4 rounded shadow text-center">
-            <h3 className="text-lg font-semibold">Overall Score</h3>
-            <p className="text-2xl font-bold">90</p>
-          </div>
+        {/* Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <MetricCard 
+            title="Average Rating" 
+            value="4.8" 
+            icon={Star}
+            trend={2.4}
+          />
+          <MetricCard 
+            title="Total Reviews" 
+            value="2,847" 
+            icon={Users}
+            trend={12.5}
+          />
+          <MetricCard 
+            title="Project Score" 
+            value="92%" 
+            icon={Award}
+            trend={-5.0}
+          />
+          <MetricCard 
+            title="Design Submissions" 
+            value="125" 
+            icon={TrendingUp}
+            trend={10.0}
+          />
         </div>
 
-        {/* Graph Section */}
+        {/* Charts */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Line Chart */}
-          <div className="bg-white p-6 rounded shadow">
-            <h2 className="text-2xl font-semibold text-gray-700 mb-6">
-              Line Performance Graph
-            </h2>
-            <Line data={lineData} options={{ responsive: true }} />
+          <div className="relative h-64">
+            <Line data={lineData} options={chartOptions} />
           </div>
-
-          {/* Bar Chart */}
-          <div className="bg-white p-6 rounded shadow">
-            <h2 className="text-2xl font-semibold text-gray-700 mb-6">
-              Bar Votes Graph
-            </h2>
-            <Bar data={barData} options={{ responsive: true }} />
+          <div className="relative h-64">
+            <Bar data={barData} options={chartOptions} />
           </div>
-
-          {/* Pie Chart */}
-          <div className="bg-white p-6 rounded shadow">
-            <h2 className="text-2xl font-semibold text-gray-700 mb-6">
-              Pie Chart
-            </h2>
-            <Pie data={pieData} options={{ responsive: true }} />
+          <div className="relative h-64">
+            <Pie data={pieData} options={chartOptions} />
           </div>
-
-          {/* Histogram */}
-          <div className="bg-white p-6 rounded shadow">
-            <h2 className="text-2xl font-semibold text-gray-700 mb-6">
-              Histogram Data
-            </h2>
-            <Bar
-              data={histogramData}
-              options={{
-                responsive: true,
-                scales: { x: { type: "category" } },
-              }}
-            />
+          <div className="relative h-64">
+            <Bar data={histogramData} options={chartOptions} />
           </div>
         </div>
       </div>

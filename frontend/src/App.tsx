@@ -5,11 +5,11 @@ import LandingPage from "./pages/LandingPage";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import UserDashboard from "./pages/UserDashboard";
-import DesignDetail from "./pages/DesignDetail";
 import DesignerDashboard from "./pages/DesignerDashboard";
 import SubmitFeedback from "./pages/SubmitFeedback";
 import AllDesigns from "./pages/AllDesigns";
 import Dashboard from "./pages/DashBoard";
+import DesignView from "./pages/DesignView";
 
 const App: React.FC = () => {
   return (
@@ -20,7 +20,7 @@ const App: React.FC = () => {
         <Route path="/all-designs" element={<AllDesigns />} />
         <Route path="/user-dashboard" element={<UserDashboard />} />
         <Route path="/designer-dashboard" element={<DesignerDashboard />} />
-        <Route path="/design/:id" element={<DesignDetail />} />
+        <Route path="/design" element={<DesignView />} />
         <Route path="/submit-feedback" element={<SubmitFeedback />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
