@@ -17,18 +17,20 @@ const user_controller_1 = __importDefault(require("./user.controller"));
 const axios_1 = __importDefault(require("axios"));
 const multer_1 = __importDefault(require("multer"));
 const form_data_1 = __importDefault(require("form-data"));
+const user_controller_2 = __importDefault(require("./user.controller"));
 const fs_1 = __importDefault(require("fs")); // Import fs to delete the uploaded file after processing
 const authorizeDesigner_1 = require("./middleware/authorizeDesigner"); // Correct for named export
 const router = (0, express_1.Router)();
 const upload = (0, multer_1.default)({ dest: 'uploads/' }); // Use temporary storage for uploaded files
 // User Registration and Login Routes
-router.post('/register', (req, res) => user_controller_1.default.register(req, res));
-router.post('/login', (req, res) => user_controller_1.default.login(req, res));
+router.post('/register', user_controller_2.default.registerValidation, user_controller_2.default.register);
+router.post('/login', user_controller_2.default.loginValidation, user_controller_2.default.login);
 router.get('/', (req, res) => user_controller_1.default.getAllUsers(req, res));
 router.put('/update/:userId', (req, res) => user_controller_1.default.updateUser(req, res));
 router.get('/:userId', (req, res) => user_controller_1.default.getOneUser(req, res));
 router.delete('/delete/:userId', (req, res) => user_controller_1.default.deleteUser(req, res));
 // New endpoint for creating a design (designer-only)
+//note mention the description field also in the form-data (postman)
 router.post('/designs', authorizeDesigner_1.authorizeDesigner, upload.single('designInput'), (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { designId, designTitle, description, createdById, createdByName } = req.body;
     const designInput = req.file;

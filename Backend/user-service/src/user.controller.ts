@@ -2,9 +2,34 @@ import { Request, Response } from 'express';
 import User, { IUser } from './user.model';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { body, validationResult } from 'express-validator';
 
 class UserController {
-    async register(req: Request, res: Response) {
+
+    // Validation for registration inputs
+    registerValidation = [
+        body('email').isEmail().withMessage('Invalid email format'),
+        body('password')
+            .isLength({ min: 8 })
+            .withMessage('Password must be at least 8 characters long')
+            .matches(/[A-Z]/)
+            .withMessage('Password must contain at least one uppercase letter')
+            .matches(/[a-z]/)
+            .withMessage('Password must contain at least one lowercase letter')
+            .matches(/\d/)
+            .withMessage('Password must contain at least one number')
+            .matches(/[@$!%*?&#]/)
+            .withMessage('Password must contain at least one special character')
+    ];
+    
+    //registration method
+    async register(req: Request, res: Response): Promise<any>{
+
+        const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        console.log("Validation errors:", errors.array()); // Add this line to debug
+        return res.status(400).json({ errors: errors.array() });
+    }
         try {
             const { userId, userName, email, password,roleId } = req.body;
 
@@ -23,7 +48,14 @@ class UserController {
         }
     }
 
-    async login(req: Request, res: Response) {
+     // Validation for login inputs
+     loginValidation = [
+        body('email').isEmail().withMessage('Invalid email format'),
+        body('password').notEmpty().withMessage('Password is required')
+    ];
+
+    // Login method
+    async login(req: Request, res: Response): Promise<any> {
         const { email, password } = req.body;
         try {
             const user = await User.findOne({ email });

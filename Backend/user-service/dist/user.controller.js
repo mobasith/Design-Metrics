@@ -15,9 +15,38 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const user_model_1 = __importDefault(require("./user.model"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const express_validator_1 = require("express-validator");
 class UserController {
+    constructor() {
+        // Validation for registration inputs
+        this.registerValidation = [
+            (0, express_validator_1.body)('email').isEmail().withMessage('Invalid email format'),
+            (0, express_validator_1.body)('password')
+                .isLength({ min: 8 })
+                .withMessage('Password must be at least 8 characters long')
+                .matches(/[A-Z]/)
+                .withMessage('Password must contain at least one uppercase letter')
+                .matches(/[a-z]/)
+                .withMessage('Password must contain at least one lowercase letter')
+                .matches(/\d/)
+                .withMessage('Password must contain at least one number')
+                .matches(/[@$!%*?&#]/)
+                .withMessage('Password must contain at least one special character')
+        ];
+        // Validation for login inputs
+        this.loginValidation = [
+            (0, express_validator_1.body)('email').isEmail().withMessage('Invalid email format'),
+            (0, express_validator_1.body)('password').notEmpty().withMessage('Password is required')
+        ];
+    }
+    //registration method
     register(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
+            const errors = (0, express_validator_1.validationResult)(req);
+            if (!errors.isEmpty()) {
+                console.log("Validation errors:", errors.array()); // Add this line to debug
+                return res.status(400).json({ errors: errors.array() });
+            }
             try {
                 const { userId, userName, email, password, roleId } = req.body;
                 // Check if the user already exists
@@ -35,6 +64,7 @@ class UserController {
             }
         });
     }
+    // Login method
     login(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             const { email, password } = req.body;

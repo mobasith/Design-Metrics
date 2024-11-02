@@ -3,6 +3,7 @@ import userController from './user.controller';
 import axios from 'axios';
 import multer from 'multer';
 import FormData from 'form-data';
+import UserController from './user.controller';
 import xlsx from 'xlsx';
 import fs from 'fs'; // Import fs to delete the uploaded file after processing
 import { authorizeDesigner } from './middleware/authorizeDesigner' ; // Correct for named export
@@ -11,8 +12,8 @@ const router = Router();
 const upload = multer({ dest: 'uploads/' }); // Use temporary storage for uploaded files
 
 // User Registration and Login Routes
-router.post('/register', (req: Request, res: Response) => userController.register(req, res) as any);
-router.post('/login', (req: Request, res: Response) => userController.login(req, res) as any);
+router.post('/register', UserController.registerValidation, UserController.register);
+router.post('/login', UserController.loginValidation, UserController.login);
 router.get('/', (req: Request, res: Response) => userController.getAllUsers(req, res));
 router.put('/update/:userId', (req: Request, res: Response) => userController.updateUser(req, res) as any);
 router.get('/:userId', (req: Request, res: Response) => userController.getOneUser(req, res) as any);
