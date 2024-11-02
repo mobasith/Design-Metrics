@@ -14,14 +14,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateDesign = exports.getDesignsByUserId = exports.getDesigns = exports.createDesign = void 0;
 const designModel_1 = __importDefault(require("../models/designModel"));
+const cloudinaryConfig_1 = __importDefault(require("../config/cloudinaryConfig"));
 const createDesign = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { designId, designTitle, description, createdById, createdByName } = req.body;
     const designInput = req.file; // File from the request
     try {
-        // Create a new design object
+        // Upload the image to Cloudinary
+        const uploadResult = yield cloudinaryConfig_1.default.uploader.upload(designInput.path, {
+            folder: 'designs', // Optional: specify a folder in Cloudinary
+        });
+        // Create a new design object with the Cloudinary URL
         const newDesign = new designModel_1.default({
             designId,
-            designInput: designInput ? designInput.path : null, // Save the file path
+            designInput: uploadResult.secure_url, // Cloudinary image URL
             designTitle,
             description,
             createdById,

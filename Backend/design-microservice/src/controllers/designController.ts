@@ -1,15 +1,21 @@
 import { Request, Response } from 'express';
 import Design from '../models/designModel';
+import cloudinary from '../config/cloudinaryConfig';
 
 export const createDesign = async (req: Request, res: Response) => {
     const { designId, designTitle, description, createdById, createdByName } = req.body;
-    const designInput = req.file; // File from the request
+    const designInput:any = req.file; // File from the request
 
     try {
-        // Create a new design object
+        // Upload the image to Cloudinary
+        const uploadResult = await cloudinary.uploader.upload(designInput.path, {
+            folder: 'designs', // Optional: specify a folder in Cloudinary
+        });
+
+        // Create a new design object with the Cloudinary URL
         const newDesign = new Design({
             designId,
-            designInput: designInput ? designInput.path : null, // Save the file path
+            designInput: uploadResult.secure_url, // Cloudinary image URL
             designTitle,
             description,
             createdById,
