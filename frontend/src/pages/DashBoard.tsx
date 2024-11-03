@@ -281,6 +281,7 @@ const Dashboard: React.FC = () => {
     try {
       const response = await fetch("http://localhost:3005/api/feedback");
       const jsonData: ArrayData[] = await response.json();
+      console.log(response);
 
       if (Array.isArray(jsonData) && jsonData.length > 0) {
         const arrayData = jsonData[0];
