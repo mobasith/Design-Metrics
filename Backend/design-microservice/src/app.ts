@@ -1,8 +1,8 @@
-import express from 'express';
-import connectDB from './config/db';
-import designRoutes from './routes/designRoutes';
-import dotenv from 'dotenv';
-import cors from 'cors'; // Import the cors package
+import express from "express";
+import connectDB from "./config/db";
+import designRoutes from "./routes/designRoutes";
+import dotenv from "dotenv";
+import cors from "cors"; // Import the cors package
 
 dotenv.config();
 const app = express();
@@ -19,7 +19,7 @@ app.use(cors()); // This will allow all origins to access your API
 // }));
 
 app.use(express.json());
-app.use('/api/designs', designRoutes);
+app.use("/api/designs", designRoutes);
 
 // Start the server
 const PORT = process.env.PORT || 3002;

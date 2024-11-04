@@ -11,20 +11,20 @@ const router = express_1.default.Router();
 // Define storage for uploaded files
 const storage = multer_1.default.diskStorage({
     destination: (req, file, cb) => {
-        const dir = path_1.default.join(__dirname, '../../uploads'); // Adjust the path as needed
+        const dir = path_1.default.join(__dirname, "../../uploads"); // Adjust the path as needed
         cb(null, dir);
     },
     filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.originalname); // Unique filename
+        cb(null, Date.now() + "-" + file.originalname); // Unique filename
     },
 });
 const upload = (0, multer_1.default)({ storage });
 // Endpoint to create a new design
-router.post('/', upload.single('designInput'), (req, res) => (0, designController_1.createDesign)(req, res));
+router.post("/", upload.single("designInput"), (req, res) => (0, designController_1.createDesign)(req, res));
 // Endpoint to get all designs
-router.get('/', (req, res) => (0, designController_1.getDesigns)(req, res));
+router.get("/", (req, res) => (0, designController_1.getDesigns)(req, res));
 // Endpoint to get design by desingId
-router.get('/:id', (req, res) => (0, designController_1.getDesignById)(req, res));
+router.get("/:designId", (req, res) => (0, designController_1.getDesignById)(req, res));
 // Endpoint to get designs by a specific user ID
-router.get('/user/:userId', (req, res) => (0, designController_1.getDesignsByUserId)(req, res));
+router.get("/user/:userId", (req, res) => (0, designController_1.getDesignsByUserId)(req, res));
 exports.default = router;
