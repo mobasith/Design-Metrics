@@ -14,6 +14,31 @@ interface FormErrors {
   password: string;
 }
 
+// Decoding interface based on your JWT structure
+interface DecodedToken {
+  roleId: number; // Adjust based on your JWT structure
+  // Add other properties you expect from the decoded token if needed
+}
+
+// Function to decode the JWT manually
+function parseJwt(token: string): DecodedToken | null {
+  try {
+    const base64Url = token.split('.')[1]; // Get the payload part
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/'); // Replace URL-safe characters
+    const jsonPayload = decodeURIComponent(
+      atob(base64) // Decode Base64
+        .split('')
+        .map((c) => `%${('00' + c.charCodeAt(0).toString(16)).slice(-2)}`)
+        .join('')
+    );
+
+    return JSON.parse(jsonPayload); // Parse JSON string to object
+  } catch (e) {
+    console.error("Error decoding JWT", e);
+    return null; // Return null if decoding fails
+  }
+}
+
 const SignIn: React.FC = () => {
   const navigate = useNavigate();
 
@@ -99,16 +124,25 @@ const SignIn: React.FC = () => {
           sessionStorage.setItem("token", token);
         }
 
-        // Store user info if needed
-        if (response.data.user) {
-          localStorage.setItem("user", JSON.stringify(response.data.user));
+        // Decode the JWT to extract user information
+        const decodedToken = parseJwt(token); // Decode the JWT manually
+        if (decodedToken) {
+          const roleId = decodedToken.roleId; // Adjust this based on your JWT structure
+
+          // Configure axios defaults for future requests
+          axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+          // Redirect to appropriate dashboard based on user roleId
+          if (roleId === 1) {
+            navigate("/user-dashboard");
+          } else if (roleId === 2) {
+            navigate("/designer-dashboard");
+          } else {
+            setApiError("Unauthorized role");
+          }
+        } else {
+          setApiError("Failed to decode token");
         }
-
-        // Configure axios defaults for future requests
-        axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
-        // Redirect to dashboard or home page
-        navigate("/dashboard");
       }
     } catch (error: any) {
       if (error.response?.status === 401) {
@@ -254,19 +288,17 @@ const SignIn: React.FC = () => {
             <Button
               text={isLoading ? "Signing in..." : "Sign In"}
               disabled={isLoading}
-              className={`w-full ${
-                isLoading ? "opacity-50 cursor-not-allowed" : ""
-              }`}
+              className={`w-full ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
             />
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-gray-600">
+          <div className="mt-4 text-center">
+            <span className="text-sm text-gray-600">
               Don't have an account?{" "}
-              <a href="/signup" className="text-blue-600 hover:underline">
-                Sign Up
+              <a href="/register" className="text-blue-600 hover:underline">
+                Sign up
               </a>
-            </p>
+            </span>
           </div>
         </div>
       </div>
