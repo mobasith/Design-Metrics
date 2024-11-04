@@ -1,5 +1,5 @@
 import express from 'express';
-import { createDesign, getDesigns, getDesignsByUserId } from '../controllers/designController';
+import { createDesign, getDesignById, getDesigns, getDesignsByUserId } from '../controllers/designController';
 import multer from 'multer';
 import path from 'path';
 
@@ -23,6 +23,9 @@ router.post('/', upload.single('designInput'), (req, res) => createDesign(req, r
 
 // Endpoint to get all designs
 router.get('/', (req, res) => getDesigns(req, res) as any);
+
+// Endpoint to get design by desingId
+router.get('/:id', (req,res) => getDesignById(req, res) as any);
 
 // Endpoint to get designs by a specific user ID
 router.get('/user/:userId', (req, res) => getDesignsByUserId(req, res) as any);

@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateDesign = exports.getDesignsByUserId = exports.getDesigns = exports.createDesign = void 0;
+exports.updateDesign = exports.getDesignsByUserId = exports.getDesignById = exports.getDesigns = exports.createDesign = void 0;
 const designModel_1 = __importDefault(require("../models/designModel"));
 const cloudinaryConfig_1 = __importDefault(require("../config/cloudinaryConfig"));
 const createDesign = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -60,6 +60,27 @@ const getDesigns = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     }
 });
 exports.getDesigns = getDesigns;
+//get design by id 
+const getDesignById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params; // Change to match the route parameter
+    try {
+        const design = yield designModel_1.default.findById(id); // Use id instead of designId
+        if (!design) {
+            return res.status(404).json({ message: 'Design not found.' });
+        }
+        res.status(200).json(design);
+    }
+    catch (error) {
+        console.error(error); // Log the error for debugging
+        if (error instanceof Error) {
+            res.status(500).json({ message: error.message });
+        }
+        else {
+            res.status(500).json({ message: 'An unknown error occurred' });
+        }
+    }
+});
+exports.getDesignById = getDesignById;
 // New method to get designs by createdById
 const getDesignsByUserId = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { userId } = req.params;
