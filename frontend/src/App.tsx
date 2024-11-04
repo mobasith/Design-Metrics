@@ -10,6 +10,7 @@ import SubmitFeedback from "./pages/SubmitFeedback";
 import AllDesigns from "./pages/AllDesigns";
 import Dashboard from "./pages/DashBoard";
 import DesignView from "./pages/DesignView";
+import ProfilePage from "./pages/ProfilePage";
 
 const App: React.FC = () => {
   return (
@@ -24,6 +25,7 @@ const App: React.FC = () => {
         <Route path="/submit-feedback" element={<SubmitFeedback />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/ProfilePage" element={<ProfilePage />} />
       </Routes>
     </Router>
   );
