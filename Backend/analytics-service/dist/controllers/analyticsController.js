@@ -30,37 +30,32 @@ class AnalyticsController {
                 const scaledData = {};
                 const genAI = new generative_ai_1.GoogleGenerativeAI(apiKey);
                 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-                for (const column in feedbackData) {
-                    const columnData = feedbackData[column];
-                    if (columnData.length > 500) {
-                        const prompt = `
-                    Please summarize the values in each column by aggregating the values, by calculating the averages , sums , or other statistics to reduce the volume of the data.
-                    Return the scaled data in JSON format.
-                    Column: ${column}
-                    Data: ${JSON.stringify(columnData)}.
-                    Don't provide any additional information`;
-                        try {
-                            const apiResponse = yield fetchFromAPIWithRetry(prompt, model);
-                            const responseText = apiResponse.response.text();
-                            console.log(`Gemini API response for ${column}:`, responseText);
+                if (feedbackData && typeof feedbackData === 'object') {
+                    for (const key in feedbackData) {
+                        const columnData = feedbackData[key];
+                        console.log(`Processing column: ${key}, Column Data:`, columnData);
+                        if (Array.isArray(columnData) && columnData.length > 500) {
+                            const prompt = this.createPrompt(key, columnData);
                             try {
-                                scaledData[column] = JSON.parse(responseText);
+                                const jsonData = yield fetchFromAPIWithRetry(prompt, model);
+                                console.log(`Transformed data for column ${key}:`, jsonData);
+                                scaledData[key] = jsonData;
                             }
-                            catch (parseError) {
-                                console.error(`Failed to parse response for ${column}:`, responseText);
-                                scaledData[column] = [];
+                            catch (apiError) {
+                                console.error(`API request failed for ${key}:`, apiError.message);
+                                scaledData[key] = columnData; // Fallback to original data
                             }
                         }
-                        catch (apiError) {
-                            console.error(`API request failed for ${column}:`, apiError);
-                            scaledData[column] = columnData;
+                        else {
+                            scaledData[key] = columnData; // Directly assign if not large data
                         }
-                    }
-                    else {
-                        scaledData[column] = columnData;
                     }
                 }
-                // Store the processed data in the database
+                else {
+                    console.error('No valid feedback data received.');
+                    return res.status(400).json({ error: 'No valid feedback data received' });
+                }
+                console.log('Processed scaled data:', scaledData);
                 const analyticsEntry = new analyticsModel_1.default({
                     mongoId,
                     processedData: scaledData,
@@ -75,13 +70,47 @@ class AnalyticsController {
             }
         });
     }
+    createPrompt(columnName, columnData) {
+        return `
+Please process and summarize the following data. Return the results in JSON format with the transformed values for the field.
+
+    Remove any null or empty values from the column.
+    For numerical data (more than 500 entries), provide the following statistics:
+        Average
+        Sum
+        Minimum
+        Maximum
+        Median
+    For categorical data, summarize with counts for each unique category.
+    For date columns, standardize the format to YYYY-MM-DD.
+
+Input Column: ${columnName} Data: ${JSON.stringify(columnData)}
+
+Return only the transformed data in JSON format, with each column populated with cleaned or summarized values.`;
+    }
 }
 function fetchFromAPIWithRetry(prompt_1, model_1) {
     return __awaiter(this, arguments, void 0, function* (prompt, model, retries = 3, delay = 1000) {
         for (let i = 0; i < retries; i++) {
             try {
                 const apiResponse = yield model.generateContent(prompt);
-                return apiResponse;
+                // Log the API response object for debugging
+                console.log("API Response Object:", apiResponse);
+                // Extract response text properly
+                const responseText = yield apiResponse.response.text();
+                console.log("Raw Gemini API response:", responseText); // Log the raw response for debugging
+                // Check if response is valid JSON
+                try {
+                    const jsonData = JSON.parse(responseText);
+                    console.log("Parsed JSON Data:", jsonData); // Log parsed data to confirm structure
+                    return jsonData;
+                }
+                catch (jsonError) {
+                    console.error("Invalid JSON format received:", jsonError);
+                    if (i === retries - 1) {
+                        throw new Error("API response is not valid JSON after multiple attempts");
+                    }
+                }
             }
             catch (error) {
                 console.error(`Attempt ${i + 1} failed:`, error);

@@ -1,14 +1,13 @@
 import { Request, Response } from 'express';
 import AnalyticsModel from '../model/analyticsModel';
 import axios from 'axios';
-import { generatePDFReport } from '../utils/pdfGenerator';
-import fs from 'fs';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 class AnalyticsController {
     async uploadFeedback(req: Request, res: Response) {
         const mongoId = req.body.mongoId;
         const apiKey = process.env.API_KEY;
+
         if (!apiKey) {
             return res.status(500).json({ error: 'API_KEY is not defined in environment variables' });
         }
@@ -18,41 +17,37 @@ class AnalyticsController {
             const { data: feedbackData } = await axios.get(feedbackServiceURL);
             console.log('Feedback data received:', feedbackData);
 
-            const scaledData: { [key: string]: any[] } = {};
+            const scaledData: { [key: string]: any } = {};
             const genAI = new GoogleGenerativeAI(apiKey);
             const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-            for (const column in feedbackData) {
-                const columnData = feedbackData[column];
-                if (columnData.length > 500) {
-                    const prompt = `
-                    Please summarize the values in each column by aggregating the values, by calculating the averages , sums , or other statistics to reduce the volume of the data.
-                    Return the scaled data in JSON format.
-                    Column: ${column}
-                    Data: ${JSON.stringify(columnData)}.
-                    Don't provide any additional information`;
+            if (feedbackData && typeof feedbackData === 'object') {
+                for (const key in feedbackData) {
+                    const columnData = feedbackData[key];
+                    console.log(`Processing column: ${key}, Column Data:`, columnData);
 
-                    try {
-                        const apiResponse = await fetchFromAPIWithRetry(prompt, model);
-                        const responseText = apiResponse.response.text();
-                        console.log(`Gemini API response for ${column}:`, responseText);
+                    if (Array.isArray(columnData) && columnData.length > 500) {
+                        const prompt = this.createPrompt(key, columnData);
 
                         try {
-                            scaledData[column] = JSON.parse(responseText);
-                        } catch (parseError) {
-                            console.error(`Failed to parse response for ${column}:`, responseText);
-                            scaledData[column] = [];
+                            const jsonData = await fetchFromAPIWithRetry(prompt, model);
+                            console.log(`Transformed data for column ${key}:`, jsonData);
+                            scaledData[key] = jsonData;
+                        } catch (apiError: any) {
+                            console.error(`API request failed for ${key}:`, apiError.message);
+                            scaledData[key] = columnData; // Fallback to original data
                         }
-                    } catch (apiError) {
-                        console.error(`API request failed for ${column}:`, apiError);
-                        scaledData[column] = columnData;
+                    } else {
+                        scaledData[key] = columnData; // Directly assign if not large data
                     }
-                } else {
-                    scaledData[column] = columnData;
                 }
+            } else {
+                console.error('No valid feedback data received.');
+                return res.status(400).json({ error: 'No valid feedback data received' });
             }
 
-            // Store the processed data in the database
+            console.log('Processed scaled data:', scaledData);
+
             const analyticsEntry = new AnalyticsModel({
                 mongoId,
                 processedData: scaledData,
@@ -66,18 +61,54 @@ class AnalyticsController {
             res.status(500).json({ error: error.message });
         }
     }
+
+    private createPrompt(columnName: string, columnData: any[]): string {
+        return `
+Please process and summarize the following data. Return the results in JSON format with the transformed values for the field.
+
+    Remove any null or empty values from the column.
+    For numerical data (more than 500 entries), provide the following statistics:
+        Average
+        Sum
+        Minimum
+        Maximum
+        Median
+    For categorical data, summarize with counts for each unique category.
+    For date columns, standardize the format to YYYY-MM-DD.
+
+Input Column: ${columnName} Data: ${JSON.stringify(columnData)}
+
+Return only the transformed data in JSON format, with each column populated with cleaned or summarized values.`;
+    }
 }
 
 async function fetchFromAPIWithRetry(prompt: string, model: any, retries: number = 3, delay: number = 1000) {
     for (let i = 0; i < retries; i++) {
         try {
             const apiResponse = await model.generateContent(prompt);
-            return apiResponse;
+            // Log the API response object for debugging
+            console.log("API Response Object:", apiResponse);
+
+            // Extract response text properly
+            const responseText = await apiResponse.response.text();
+            console.log("Raw Gemini API response:", responseText); // Log the raw response for debugging
+
+            // Check if response is valid JSON
+            try {
+                const jsonData = JSON.parse(responseText);
+                console.log("Parsed JSON Data:", jsonData); // Log parsed data to confirm structure
+                return jsonData;
+            } catch (jsonError) {
+                console.error("Invalid JSON format received:", jsonError);
+                if (i === retries - 1) {
+                    throw new Error("API response is not valid JSON after multiple attempts");
+                }
+            }
         } catch (error) {
             console.error(`Attempt ${i + 1} failed:`, error);
             if (i < retries - 1) {
                 await new Promise(resolve => setTimeout(resolve, delay));
-                delay *= 2;  // Exponential backoff
+                delay *= 2; // Exponential backoff
             } else {
                 throw new Error("API request failed after multiple attempts");
             }
@@ -85,6 +116,4 @@ async function fetchFromAPIWithRetry(prompt: string, model: any, retries: number
     }
 }
 
-
 export default new AnalyticsController();
-
