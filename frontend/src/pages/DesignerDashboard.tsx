@@ -1,268 +1,244 @@
-import React, { useState } from "react";
-import { Line, Bar, Pie } from "react-chartjs-2";
-import { Chart, registerables } from "chart.js";
-import { 
-  Bell, 
-  TrendingUp, 
-  Star, 
-  Users, 
-  Award,
-  ChevronDown,
-  Calendar
-} from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Layout, LayoutGrid, Upload, Settings, LogOut } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from '../components/ui/dialog';
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card";
 
-Chart.register(...registerables);
-
-// Define the props interface for MetricCard
-interface MetricCardProps {
-  title: string;
-  value: string;
-  icon: React.FC<React.SVGProps<SVGSVGElement>>;
-  trend?: number | null; // Optional prop
+interface Design {
+  _id: string;
+  designInput: string; // Ensure this is a valid path for the image
+  designTitle: string;
+  description: string;
+  createdAt: string;
 }
 
-const DesignerDashboard: React.FC = () => {
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [selectedPeriod, setSelectedPeriod] = useState("This Month");
+const DesignerDashboard = () => {
+  const [designs, setDesigns] = useState<Design[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showUploadModal, setShowUploadModal] = useState<boolean>(false);
+  const [formData, setFormData] = useState<{
+    designTitle: string;
+    description: string;
+    designInput: File | null;
+  }>({
+    designTitle: '',
+    description: '',
+    designInput: null,
+  });
 
-  const notifications = [
-    { 
-      id: 1, 
-      message: "New design submission received", 
-      time: "2 mins ago",
-      type: "new"
-    },
-    { 
-      id: 2, 
-      message: "Your design has been approved", 
-      time: "1 hour ago",
-      type: "success"
-    },
-    { 
-      id: 3, 
-      message: "Feedback received on Design 2", 
-      time: "3 hours ago",
-      type: "feedback"
-    },
-  ];
+  const CREATED_BY_ID = "123456";
+  const CREATED_BY_NAME = "Sarah Anderson";
 
-  // Enhanced chart configurations
-  const lineData = {
-    labels: ["January", "February", "March", "April", "May"],
-    datasets: [
-      {
-        label: "Performance Score",
-        data: [65, 59, 80, 81, 56],
-        fill: true,
-        backgroundColor: "rgba(99, 102, 241, 0.1)",
-        borderColor: "rgba(99, 102, 241, 1)",
-        tension: 0.4,
-        pointRadius: 4,
-        pointBackgroundColor: "white",
-        pointBorderColor: "rgba(99, 102, 241, 1)",
-        pointBorderWidth: 2,
-      },
-    ],
-  };
+  useEffect(() => {
+    fetchDesigns();
+  }, []);
 
-  const barData = {
-    labels: ["UI Design", "UX Design", "Graphic Design", "Web Design", "Logo Design", "Icon Design"],
-    datasets: [
-      {
-        label: "Project Completion Rate",
-        data: [92, 88, 85, 84, 90, 87],
-        backgroundColor: "rgba(99, 102, 241, 0.8)",
-        borderRadius: 6,
-      },
-    ],
-  };
-
-  const pieData = {
-    labels: ["Excellent", "Good", "Average"],
-    datasets: [
-      {
-        data: [63, 28, 9],
-        backgroundColor: [
-          "rgba(99, 102, 241, 0.8)",
-          "rgba(147, 51, 234, 0.8)",
-          "rgba(236, 72, 153, 0.8)",
-        ],
-        borderWidth: 0,
-      },
-    ],
-  };
-
-  const histogramData = {
-    labels: ["0-2", "2-4", "4-6", "6-8", "8-10"],
-    datasets: [
-      {
-        label: "Review Distribution",
-        data: [5, 15, 35, 30, 15],
-        backgroundColor: "rgba(99, 102, 241, 0.8)",
-        borderRadius: 6,
-      },
-    ],
-  };
-
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false, // Maintain aspect ratio for better sizing
-    plugins: {
-      legend: {
-        position: 'bottom' as const,
-        labels: {
-          boxWidth: 12,
-          usePointStyle: true,
-          font: {
-            size: 12
-          }
-        }
-      },
-      tooltip: {
-        backgroundColor: 'white',
-        titleColor: '#1f2937',
-        bodyColor: '#1f2937',
-        borderColor: '#e5e7eb',
-        borderWidth: 1,
-        padding: 12,
-        boxWidth: 10,
-        usePointStyle: true,
-        boxPadding: 3
-      }
+  const fetchDesigns = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('http://localhost:3002/api/designs');
+      setDesigns(response.data);
+    } catch (err) {
+      setError('Failed to fetch designs');
+      console.error('Fetch error:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const MetricCard: React.FC<MetricCardProps> = ({ title, value, icon: Icon, trend = null }) => (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 transition-all hover:shadow-md">
-      <div className="flex items-center justify-between mb-4">
-        <div className="p-2 bg-indigo-50 rounded-lg">
-          <Icon className="h-6 w-6 text-indigo-500" />
-        </div>
-        {trend && (
-          <span className={`text-sm font-medium ${trend >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-            {trend > 0 ? '+' : ''}{trend}%
-          </span>
-        )}
-      </div>
-      <h3 className="text-gray-500 text-sm font-medium mb-2">{title}</h3>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
-    </div>
-  );
+  const handleUpload = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (!formData.designInput) {
+        throw new Error('Please select a file');
+      }
+
+      const formDataToSend = new FormData();
+      formDataToSend.append('designInput', formData.designInput);
+      formDataToSend.append('designTitle', formData.designTitle);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('createdById', CREATED_BY_ID);
+      formDataToSend.append('createdByName', CREATED_BY_NAME);
+      // Send designId as a number (or as a string if required)
+      formDataToSend.append('designId', Date.now().toString());
+
+      await axios.post('http://localhost:3002/api/designs', formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      await fetchDesigns();
+      setShowUploadModal(false);
+      setFormData({ designTitle: '', description: '', designInput: null });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to upload design';
+      setError(errorMessage);
+      console.error('Upload error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        designInput: files[0]
+      }));
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
 
   return (
-    <div className="flex">
-      <div className="flex-1 min-h-screen bg-gray-50 p-8">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Designer Dashboard</h1>
-            <p className="text-gray-500 mt-1">Welcome back, Sarah Anderson</p>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <button
-                className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50"
-                onClick={() => {}}
+    <div className="flex h-screen bg-gray-100">
+      <div className="w-64 bg-white shadow-lg">
+        <div className="p-6">
+          <h1 className="text-2xl font-bold text-indigo-600">Design Hub</h1>
+        </div>
+        <nav className="mt-6">
+          <div className="px-4">
+            <div className="flex flex-col space-y-2">
+              <button className="flex items-center px-4 py-2 text-gray-700 bg-gray-100 rounded-lg">
+                <Layout className="w-5 h-5 mr-3" />
+                Dashboard
+              </button>
+              <button className="flex items-center px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                <LayoutGrid className="w-5 h-5 mr-3" />
+                My Designs
+              </button>
+              <button 
+                onClick={() => setShowUploadModal(true)}
+                className="flex items-center px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
               >
-                <Calendar className="h-4 w-4" />
-                <span>{selectedPeriod}</span>
-                <ChevronDown className="h-4 w-4" />
+                <Upload className="w-5 h-5 mr-3" />
+                Upload Design
+              </button>
+              <button className="flex items-center px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                <Settings className="w-5 h-5 mr-3" />
+                Settings
               </button>
             </div>
+          </div>
+        </nav>
+        <div className="absolute bottom-0 w-64 p-4">
+          <button className="flex items-center w-full px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+            <LogOut className="w-5 h-5 mr-3" />
+            Logout
+          </button>
+        </div>
+      </div>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
 
-            <div className="relative">
-              <button
-                className="relative p-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50"
-                onClick={() => setShowNotifications(!showNotifications)}
-              >
-                <Bell className="h-5 w-5" />
-                {notifications.length > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 bg-indigo-500 text-white text-xs flex items-center justify-center rounded-full">
-                    {notifications.length}
-                  </span>
-                )}
-              </button>
+      <div className="flex-1 overflow-auto">
+        <div className="p-8">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-2xl font-semibold text-gray-800">My Designs</h2>
+            <button
+              onClick={() => setShowUploadModal(true)}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+            >
+              Upload New Design
+            </button>
+          </div>
 
-              {showNotifications && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50">
-                  <div className="p-4 border-b border-gray-100">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-gray-900">Notifications</h3>
-                      <span className="text-xs text-gray-500">Mark all as read</span>
-                    </div>
-                  </div>
-                  <div className="max-h-96 overflow-y-auto">
-                    {notifications.map((notification) => (
-                      <div
-                        key={notification.id}
-                        className="p-4 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-100 last:border-0"
-                      >
-                        <div className="flex items-start space-x-3">
-                          <div className={`p-2 rounded-lg ${
-                            notification.type === 'new' ? 'bg-blue-50 text-blue-500' :
-                            notification.type === 'success' ? 'bg-green-50 text-green-500' :
-                            'bg-purple-50 text-purple-500'
-                          }`}>
-                            <Bell className="h-4 w-4" />
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-900">{notification.message}</p>
-                            <span className="text-xs text-gray-500">{notification.time}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+          {loading ? (
+            <div className="text-center py-8">Loading...</div>
+          ) : error ? (
+            <div className="text-red-500 text-center py-8">{error}</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {designs.map((design) => (
+                <Card key={design._id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <CardTitle className="text-lg">{design.designTitle}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <img
+                      src={design.designInput} // Ensure this is a valid image URL
+                      alt={design.designTitle}
+                      className="w-full h-48 object-cover rounded-md"
+                    />
+                    <p className="mt-4 text-gray-600">{design.description}</p>
+                  </CardContent>
+                  <CardFooter className="text-sm text-gray-500">
+                    Created on {formatDate(design.createdAt)}
+                  </CardFooter>
+                </Card>
+              ))}
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <MetricCard 
-            title="Average Rating" 
-            value="4.8" 
-            icon={Star}
-            trend={2.4}
-          />
-          <MetricCard 
-            title="Total Reviews" 
-            value="2,847" 
-            icon={Users}
-            trend={12.5}
-          />
-          <MetricCard 
-            title="Project Score" 
-            value="92%" 
-            icon={Award}
-            trend={-5.0}
-          />
-          <MetricCard 
-            title="Design Submissions" 
-            value="125" 
-            icon={TrendingUp}
-            trend={10.0}
-          />
-        </div>
-
-        {/* Charts */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="relative h-64">
-            <Line data={lineData} options={chartOptions} />
-          </div>
-          <div className="relative h-64">
-            <Bar data={barData} options={chartOptions} />
-          </div>
-          <div className="relative h-64">
-            <Pie data={pieData} options={chartOptions} />
-          </div>
-          <div className="relative h-64">
-            <Bar data={histogramData} options={chartOptions} />
-          </div>
-        </div>
+        <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Upload Design</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleUpload} className="space-y-4">
+              <div>
+                <label htmlFor="designTitle" className="block text-sm font-medium text-gray-700">Title</label>
+                <input
+                  type="text"
+                  id="designTitle"
+                  value={formData.designTitle}
+                  onChange={(e) => setFormData({ ...formData, designTitle: e.target.value })}
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700">Description</label>
+                <textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="designInput" className="block text-sm font-medium text-gray-700">Select Design File</label>
+                <input
+                  type="file"
+                  id="designInput"
+                  onChange={handleFileChange}
+                  accept="image/*"
+                  required
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+              <div className="flex justify-end">
+                <button type="button" onClick={() => setShowUploadModal(false)} className="mr-2 text-gray-600">Cancel</button>
+                <button type="submit" className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700" disabled={loading}>
+                  {loading ? 'Uploading...' : 'Upload'}
+                </button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

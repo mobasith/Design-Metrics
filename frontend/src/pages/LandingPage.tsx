@@ -6,10 +6,9 @@ import {
   Target, 
   ArrowRight, 
   Play,
-  ChevronRight,
-  Star,
-  CheckCircle
+  ChevronRight
 } from 'lucide-react';
+import { Link } from 'react-router-dom'; // Import Link from react-router-dom
 
 const LandingPage = () => {
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
@@ -58,9 +57,11 @@ const LandingPage = () => {
               <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">Features</a>
               <a href="#how-it-works" className="text-gray-600 hover:text-blue-600 transition-colors">How it Works</a>
               <a href="#pricing" className="text-gray-600 hover:text-blue-600 transition-colors">Pricing</a>
-              <button className="px-4 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors">
-                Get Started
-              </button>
+              <Link to="/signin">
+                <button className="px-4 py-2 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors">
+                  Get Started
+                </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -79,10 +80,12 @@ const LandingPage = () => {
                 Empower your design team with real-time analytics, actionable insights, and collaborative tools to create exceptional user experiences.
               </p>
               <div className="flex items-center space-x-4">
-                <button className="px-8 py-4 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors flex items-center space-x-2">
-                  <span>Start Free Trial</span>
-                  <ArrowRight className="w-4 h-4" />
-                </button>
+                <Link to="/signin">
+                  <button className="px-8 py-4 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors flex items-center space-x-2">
+                    <span>Start Free Trial</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </Link>
                 <button 
                   onClick={() => setIsVideoModalOpen(true)}
                   className="px-8 py-4 rounded-full border border-gray-300 hover:border-blue-600 transition-colors flex items-center space-x-2"
@@ -161,10 +164,12 @@ const LandingPage = () => {
       <section className="py-20 bg-blue-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-white mb-8">Ready to Transform Your Design Process?</h2>
-          <button className="px-8 py-4 bg-white text-blue-600 rounded-full hover:bg-gray-100 transition-colors inline-flex items-center space-x-2">
-            <span>Get Started Now</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
+          <Link to="/signin">
+            <button className="px-8 py-4 bg-white text-blue-600 rounded-full hover:bg-gray-100 transition-colors inline-flex items-center space-x-2">
+              <span>Get Started Now</span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </Link>
           <p className="mt-4 text-blue-100">14-day free trial · No credit card required</p>
         </div>
       </section>
@@ -172,41 +177,12 @@ const LandingPage = () => {
       {/* Footer */}
       <footer className="bg-gray-900 text-gray-400 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="text-white font-semibold mb-4">Product</h3>
-              <ul className="space-y-2">
-                <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Case Studies</a></li>
-              </ul>
+          <div className="flex justify-between">
+            <div>&copy; {new Date().getFullYear()} DesignMetrics. All Rights Reserved.</div>
+            <div className="flex space-x-4">
+              <Link to="/privacy" className="hover:text-white">Privacy Policy</Link>
+              <Link to="/terms" className="hover:text-white">Terms of Service</Link>
             </div>
-            <div>
-              <h3 className="text-white font-semibold mb-4">Company</h3>
-              <ul className="space-y-2">
-                <li><a href="#" className="hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-white font-semibold mb-4">Resources</h3>
-              <ul className="space-y-2">
-                <li><a href="#" className="hover:text-white transition-colors">Documentation</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">API</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-white font-semibold mb-4">Contact</h3>
-              <ul className="space-y-2">
-                <li>hello@designmetrics.com</li>
-                <li>+1 (555) 123-4567</li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-12 pt-8 border-t border-gray-800 text-center">
-            <p>© 2024 DesignMetrics. All rights reserved.</p>
           </div>
         </div>
       </footer>
