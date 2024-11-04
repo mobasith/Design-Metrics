@@ -46,6 +46,28 @@ export const getDesigns = async (req: Request, res: Response) => {
     }
 };
 
+//get design by id 
+
+export const getDesignById = async (req: Request, res: Response) => {
+    const { id } = req.params; // Change to match the route parameter
+
+    try {
+        const design = await Design.findById(id); // Use id instead of designId
+        if (!design) {
+            return res.status(404).json({ message: 'Design not found.' });
+        }
+        res.status(200).json(design);
+    } catch (error) {
+        console.error(error); // Log the error for debugging
+        if (error instanceof Error) {
+            res.status(500).json({ message: error.message });
+        } else {
+            res.status(500).json({ message: 'An unknown error occurred' });
+        }
+    }
+};
+
+
 // New method to get designs by createdById
 export const getDesignsByUserId = async (req: Request, res: Response) => {
     const { userId } = req.params;

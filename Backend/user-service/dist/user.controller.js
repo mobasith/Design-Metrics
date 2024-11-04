@@ -20,23 +20,23 @@ class UserController {
     constructor() {
         // Validation for registration inputs
         this.registerValidation = [
-            (0, express_validator_1.body)('email').isEmail().withMessage('Invalid email format'),
-            (0, express_validator_1.body)('password')
+            (0, express_validator_1.body)("email").isEmail().withMessage("Invalid email format"),
+            (0, express_validator_1.body)("password")
                 .isLength({ min: 8 })
-                .withMessage('Password must be at least 8 characters long')
+                .withMessage("Password must be at least 8 characters long")
                 .matches(/[A-Z]/)
-                .withMessage('Password must contain at least one uppercase letter')
+                .withMessage("Password must contain at least one uppercase letter")
                 .matches(/[a-z]/)
-                .withMessage('Password must contain at least one lowercase letter')
+                .withMessage("Password must contain at least one lowercase letter")
                 .matches(/\d/)
-                .withMessage('Password must contain at least one number')
+                .withMessage("Password must contain at least one number")
                 .matches(/[@$!%*?&#]/)
-                .withMessage('Password must contain at least one special character')
+                .withMessage("Password must contain at least one special character"),
         ];
         // Validation for login inputs
         this.loginValidation = [
-            (0, express_validator_1.body)('email').isEmail().withMessage('Invalid email format'),
-            (0, express_validator_1.body)('password').notEmpty().withMessage('Password is required')
+            (0, express_validator_1.body)("email").isEmail().withMessage("Invalid email format"),
+            (0, express_validator_1.body)("password").notEmpty().withMessage("Password is required"),
         ];
     }
     //registration method
@@ -52,10 +52,16 @@ class UserController {
                 // Check if the user already exists
                 const existingUser = yield user_model_1.default.findOne({ email });
                 if (existingUser) {
-                    return res.status(400).json({ message: 'User already exists' });
+                    return res.status(400).json({ message: "User already exists" });
                 }
                 const hashedPassword = yield bcryptjs_1.default.hash(password, 10);
-                const user = new user_model_1.default({ userId, userName, email, password: hashedPassword, roleId });
+                const user = new user_model_1.default({
+                    userId,
+                    userName,
+                    email,
+                    password: hashedPassword,
+                    roleId,
+                });
                 yield user.save();
                 res.status(201).json(user);
             }
@@ -71,10 +77,10 @@ class UserController {
             try {
                 const user = yield user_model_1.default.findOne({ email });
                 if (!user || !(yield bcryptjs_1.default.compare(password, user.password))) {
-                    return res.status(401).json({ message: 'Invalid credentials' });
+                    return res.status(401).json({ message: "Invalid credentials" });
                 }
                 // Include roleId in the token payload
-                const token = jsonwebtoken_1.default.sign({ userId: user.userId, roleId: user.roleId }, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '1h' });
+                const token = jsonwebtoken_1.default.sign({ userId: user.userId, roleId: user.roleId }, process.env.JWT_SECRET || "your_jwt_secret", { expiresIn: "1h" });
                 res.json({ token });
             }
             catch (error) {
@@ -99,7 +105,7 @@ class UserController {
             try {
                 const user = yield user_model_1.default.findOne({ userId });
                 if (!user) {
-                    return res.status(404).json({ message: 'User not found' });
+                    return res.status(404).json({ message: "User not found" });
                 }
                 res.json(user);
             }
@@ -113,9 +119,11 @@ class UserController {
             const { userId } = req.params; // Get userId from route parameters
             const updates = req.body; // Get the updates from the request body
             try {
-                const user = yield user_model_1.default.findOneAndUpdate({ userId }, updates, { new: true });
+                const user = yield user_model_1.default.findOneAndUpdate({ userId }, updates, {
+                    new: true,
+                });
                 if (!user) {
-                    return res.status(404).json({ message: 'User not found' });
+                    return res.status(404).json({ message: "User not found" });
                 }
                 res.json(user);
             }
@@ -130,7 +138,7 @@ class UserController {
             try {
                 const user = yield user_model_1.default.findOneAndDelete({ userId });
                 if (!user) {
-                    return res.status(404).json({ message: 'User not found' });
+                    return res.status(404).json({ message: "User not found" });
                 }
                 res.status(204).send(); // No content to send back
             }

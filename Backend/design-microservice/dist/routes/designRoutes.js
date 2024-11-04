@@ -23,6 +23,8 @@ const upload = (0, multer_1.default)({ storage });
 router.post('/', upload.single('designInput'), (req, res) => (0, designController_1.createDesign)(req, res));
 // Endpoint to get all designs
 router.get('/', (req, res) => (0, designController_1.getDesigns)(req, res));
+// Endpoint to get design by desingId
+router.get('/:id', (req, res) => (0, designController_1.getDesignById)(req, res));
 // Endpoint to get designs by a specific user ID
 router.get('/user/:userId', (req, res) => (0, designController_1.getDesignsByUserId)(req, res));
 exports.default = router;
