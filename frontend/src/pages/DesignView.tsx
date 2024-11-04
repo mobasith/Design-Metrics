@@ -1,83 +1,146 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import axios from 'axios';
-import { 
-  Heart, 
-  Share2, 
-  Download, 
-  ChevronLeft
-} from 'lucide-react';
-import { 
-  Card,
-  CardContent,
-} from "../components/ui/DashBoardCard";
-import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { Heart, Share2, Download, ChevronLeft } from "lucide-react";
+import { Card, CardContent } from "../components/ui/DashBoardCard";
 import { Button } from "../components/ui/button";
 
+interface Design {
+  _id: string;
+  designId: number;
+  designInput: string;
+  designTitle: string;
+  description: string;
+  designerName: string; // New field
+  creationDate: string; // New field
+  category: string; // New field
+  tags?: string[]; // New field with optional property
+  // Add other properties as needed
+}
+
 const DesignView: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const [design, setDesign] = useState<any>(null);
+  const { designId } = useParams<{ designId: string }>();
+  const navigate = useNavigate();
+  const [design, setDesign] = useState<Design | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchDesign = async () => {
+      if (!designId) {
+        setError("Design ID is missing.");
+        setLoading(false);
+        return;
+      }
+
       try {
-        const response = await axios.get(`http://localhost:3002/api/designs/${id}`);
+        const response = await axios.get<Design>(
+          `http://localhost:3002/api/designs/${designId}`
+        );
         setDesign(response.data);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error fetching design:", err);
-        setError("Failed to load design details");
+        if (err.response) {
+          // Server responded with a status other than 2xx
+          setError(`Error: ${err.response.status} ${err.response.statusText}`);
+        } else if (err.request) {
+          // Request was made but no response received
+          setError("Error: No response from server.");
+        } else {
+          // Something else happened
+          setError(`Error: ${err.message}`);
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchDesign();
-  }, [id]);
+  }, [designId]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex flex-col items-center min-h-screen bg-gray-50">
       {/* Top Navigation */}
-      <div className="bg-white border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center">
-          <Button variant="link" onClick={() => window.history.back()}>
-            <ChevronLeft className="mr-2" />
-            Back
-          </Button>
-          <h1 className="text-xl font-bold ml-4">Design Detail</h1>
-        </div>
+      <div className="flex justify-between items-center w-full p-4 bg-white shadow-md">
+        <Button onClick={() => window.history.back()}>
+          <ChevronLeft className="mr-2" />
+          Back
+        </Button>
+        <h2 className="text-2xl font-bold">Design Detail</h2>
       </div>
 
       {/* Design Detail Section */}
       <div className="container mx-auto px-4 py-8">
         {loading ? (
-          <div>Loading design details...</div>
+          <div className="text-center text-gray-500">
+            Loading design details...
+          </div>
         ) : error ? (
-          <div>{error}</div>
+          <div className="text-center text-red-500">{error}</div>
         ) : design ? (
-          <Card>
+          <Card className="max-w-2xl mx-auto shadow-lg rounded-lg overflow-hidden">
             <CardContent>
-              <h2 className="text-2xl font-semibold">{design.designTitle}</h2>
-              <img src={design.designInput} alt={design.designTitle} className="w-full h-64 object-cover my-4" />
-              <p>{design.description}</p>
-              <div className="flex justify-between mt-4">
+              {/* Header with Designer Info */}
+              <div className="flex items-center mb-4">
+                {/* You can add an Avatar component here if needed */}
                 <div>
-                  <span className="mr-4">
-                    <Heart className="inline-block" /> 0 Likes
-                  </span>
-                  <span className="mr-4">
-                    <Share2 className="inline-block" /> Share
-                  </span>
-                  <span className="mr-4">
-                    <Download className="inline-block" /> Download
-                  </span>
+                  <h3 className="text-2xl font-semibold">
+                    {design.designTitle}
+                  </h3>
+                  <p className="text-gray-600">By {design.designerName}</p>
+                  <p className="text-gray-500 text-sm">
+                    Created on{" "}
+                    {new Date(design.creationDate).toLocaleDateString()}
+                  </p>
                 </div>
+              </div>
+
+              {/* Design Image */}
+              <img
+                src={design.designInput}
+                alt={design.designTitle}
+                className="w-full h-64 object-cover rounded-lg my-4"
+              />
+
+              {/* Description and Additional Details */}
+              <p className="text-gray-700 mb-4">{design.description}</p>
+              <p>
+                <strong>Category:</strong> {design.category}
+              </p>
+              <p>
+                <strong>Tags:</strong>{" "}
+                {design.tags?.join(", ") || "No tags available"}
+              </p>
+
+              {/* Action Buttons */}
+              <div className="flex gap-4 mt-6">
+                <Button variant="ghost" className="flex items-center space-x-1">
+                  <Heart className="text-red-500" />
+                  <span>Like</span>
+                </Button>
+                <Button variant="ghost" className="flex items-center space-x-1">
+                  <Share2 />
+                  <span>Share</span>
+                </Button>
+                <Button variant="ghost" className="flex items-center space-x-1">
+                  <Download />
+                  <span>Download</span>
+                </Button>
+              </div>
+
+              {/* Redirect Button to Submit Feedback */}
+              <div className="mt-6">
+                <Button
+                  onClick={() => navigate("/submit-feedback")}
+                  className="bg-green-500 hover:bg-green-600 text-white"
+                >
+                  Submit Feedback
+                </Button>
               </div>
             </CardContent>
           </Card>
         ) : (
-          <div>No design found</div>
+          <div className="text-center text-gray-500">No design found</div>
         )}
       </div>
     </div>

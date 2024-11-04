@@ -1,46 +1,35 @@
-import React from 'react';
+import React from "react";
 
 interface DesignCardProps {
-  id: number;
-  title: string;
+  designId: number;
+  designInput: string;
+  designTitle: string;
   description: string;
-  imageUrl: string;
-  likes: number;
-  dislikes: number;
-  onClick: () => void;
-  onLike: (id: number) => void;
-  onDislike: (id: number) => void;
+  createdById: number;
+  createdByName: string;
+  createdAt: string; // Add this if you need to display the date
+  rating?: number; // Optional property
 }
 
 const DesignCard: React.FC<DesignCardProps> = ({
-  id,
-  title,
+  designId,
+  designInput,
+  designTitle,
   description,
-  imageUrl,
-  likes,
-  dislikes,
-  onClick,
-  onLike,
-  onDislike,
+  createdById,
+  createdByName,
+  createdAt,
+  rating,
 }) => {
   return (
     <div className="border rounded-md p-4">
-      <img src={imageUrl} alt={title} className="w-full h-32 object-cover" />
-      <h2 className="text-xl font-semibold">{title}</h2>
+      <h2 className="text-xl font-semibold">{designTitle}</h2>
       <p>{description}</p>
-      <div className="flex justify-between items-center mt-2">
-        <div>
-          <button onClick={() => onLike(id)} className="text-blue-500">
-            Like {likes}
-          </button>
-          <button onClick={() => onDislike(id)} className="text-red-500 ml-2">
-            Dislike {dislikes}
-          </button>
-        </div>
-        <button onClick={onClick} className="text-gray-500">
-          View
-        </button>
-      </div>
+      <p>
+        Created by: {createdByName} (ID: {createdById})
+      </p>
+      <p>Created at: {new Date(createdAt).toLocaleDateString()}</p>
+      {rating && <p>Rating: {rating}</p>}
     </div>
   );
 };
