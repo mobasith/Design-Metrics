@@ -279,7 +279,7 @@ const Dashboard: React.FC = () => {
 
   const fetchData = async () => {
     try {
-      const response = await fetch("http://localhost:3005/api/feedback");
+      const response = await fetch("http://localhost:3001/api/feedback");
       const jsonData: ArrayData[] = await response.json();
       console.log(response);
 

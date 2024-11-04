@@ -1,4 +1,3 @@
-// src/App.tsx
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
@@ -21,11 +20,11 @@ const App: React.FC = () => {
         <Route path="/all-designs" element={<AllDesigns />} />
         <Route path="/user-dashboard" element={<UserDashboard />} />
         <Route path="/designer-dashboard" element={<DesignerDashboard />} />
-        <Route path="/design" element={<DesignView />} />
+        <Route path="/design/:designId" element={<DesignView />} />
         <Route path="/submit-feedback" element={<SubmitFeedback />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
-        <Route path="/ProfilePage" element={<ProfilePage />} />
+        <Route path="/profile" element={<ProfilePage />} />
       </Routes>
     </Router>
   );
