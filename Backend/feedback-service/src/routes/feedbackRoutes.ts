@@ -25,7 +25,7 @@ router.delete('/:id', (req: Request, res: Response) => FeedbackController.remove
 router.get('/design/:designId', (req: Request, res: Response) => FeedbackController.getFeedbackByDesignId(req, res) as any);
 
 
-// Upload Excel file and parse it
+// Upload Excel file and parse it(new)
 router.post('/upload', upload.single('file'), (req: Request, res: Response) => {
     FeedbackController.uploadFeedback(req, res);
 });
@@ -33,4 +33,6 @@ router.post('/upload', upload.single('file'), (req: Request, res: Response) => {
 //get a feedback by mongo id
 router.get('/feedback/mongoId/:mongoId', (req:Request,res: Response) => FeedbackController.getFeedbackByMongoId(req, res) as any);
 
+//get feedback's description only by mongo id
+router.get('/description/:mongoId', FeedbackController.getDescriptionByMongoId);
 export default router;

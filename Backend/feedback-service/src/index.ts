@@ -4,7 +4,7 @@ import connectDB from "./config/db";
 import cors from "cors"; // Use ES6 import for consistency
 
 const app = express();
-const PORT = process.env.PORT || 3005;
+const PORT = process.env.PORT || 3001;
 
 // Connect to MongoDB
 connectDB();

@@ -109,6 +109,12 @@ export const uploadFeedback = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'No file uploaded' });
         }
 
+        // Get the 'description' field from form-data
+        const { description } = req.body;
+        if (!description) {
+            return res.status(400).json({ error: 'Description is required' });
+        }
+
         // Read Excel file
         const workbook = XLSX.readFile(req.file.path);
         const sheetName = workbook.SheetNames[0];
@@ -119,13 +125,19 @@ export const uploadFeedback = async (req: Request, res: Response) => {
 
         // Separate headers and rows
         const headers: string[] = sheetData[0] as string[];
-        const rows: any[][] = sheetData.slice(1) as any[][]; // Cast here to avoid TypeScript error
+        const rows: any[][] = sheetData.slice(1) as any[][];
 
         // Group values by column
         const groupedData: { [key: string]: any[] } = {};
         headers.forEach((header, index) => {
             groupedData[header] = rows.map((row: any[]) => row[index]);
         });
+
+        // Add description to groupedData
+        groupedData['description'] = description;
+
+        // Log groupedData to verify structure before saving
+        console.log("Grouped Data being saved:", groupedData);
 
         // Store grouped data as a single document in MongoDB
         const feedback = new FeedbackModel(groupedData);
@@ -138,6 +150,7 @@ export const uploadFeedback = async (req: Request, res: Response) => {
         return res.status(500).json({ error: 'Failed to upload feedback' });
     }
 };
+
 // Get feedback by MongoDB ID (automatically assigned)
 export const getFeedbackByMongoId = async (req: Request, res: Response) => {
     const { mongoId } = req.params; // Expecting the ID to be passed in the request parameters
@@ -156,4 +169,24 @@ export const getFeedbackByMongoId = async (req: Request, res: Response) => {
         return res.status(500).json({ error: "Error in getting feedback by MongoDB ID" });
     }
 };
+
+// Get only the 'description' field by MongoDB ID
+export const getDescriptionByMongoId = async (req: Request, res: Response):Promise<any> => {
+    const { mongoId } = req.params; // Expecting the ID to be passed in the request parameters
+
+    try {
+        // Find feedback by MongoDB ID and include only the 'description' field
+        const feedback = await FeedbackModel.findById(mongoId, { description: 1, _id: 0 });
+        if (!feedback) {
+            return res.status(404).json({ message: "Feedback not found with the provided MongoDB ID" });
+        }
+        return res.status(200).json(feedback);
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            return res.status(500).json({ error: error.message || "Error in getting description by MongoDB ID" });
+        }
+        return res.status(500).json({ error: "Error in getting description by MongoDB ID" });
+    }
+};
+
 
