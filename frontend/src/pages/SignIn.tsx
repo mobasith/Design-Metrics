@@ -119,9 +119,9 @@ const SignIn: React.FC = () => {
         // Store the token
         const token = response.data.token;
         if (rememberMe) {
-          localStorage.setItem("token", token);
+          localStorage.setItem("token", response.data.token);
         } else {
-          sessionStorage.setItem("token", token);
+          localStorage.setItem("token", response.data.token);
         }
 
         // Decode the JWT to extract user information
@@ -295,7 +295,7 @@ const SignIn: React.FC = () => {
           <div className="mt-4 text-center">
             <span className="text-sm text-gray-600">
               Don't have an account?{" "}
-              <a href="/register" className="text-blue-600 hover:underline">
+              <a href="/signup" className="text-blue-600 hover:underline">
                 Sign up
               </a>
             </span>
