@@ -17,20 +17,21 @@ import {
   Image,
   Settings,
   LogOut,
+  Eye,
 } from "lucide-react";
 
 interface Design {
   category: string;
-  _id: string; // MongoDB ID
-  designId: number; // Design ID
-  designInput: string; // URL of the design image
-  designTitle: string; // Title of the design
-  description: string; // Description of the design
-  createdById: number; // ID of the creator
-  createdByName: string; // Name of the creator
-  createdAt: string; // ISO date string
-  updatedAt: string; // ISO date string
-  __v: number; // Version key (optional)
+  _id: string;
+  designId: number;
+  designInput: string;
+  designTitle: string;
+  description: string;
+  createdById: number;
+  createdByName: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
 }
 
 const UserDashboard: React.FC = () => {
@@ -66,6 +67,10 @@ const UserDashboard: React.FC = () => {
       (design.designTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
         design.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  const handleViewDesign = (designId: number) => {
+    navigate(`/designs/${designId}`);
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -187,16 +192,25 @@ const UserDashboard: React.FC = () => {
                     <img
                       src={design.designInput}
                       alt={design.designTitle}
-                      className="w-full h-auto"
+                      className="w-full h-48 object-cover rounded-lg"
                     />
                   </CardContent>
-                  <CardFooter>
-                    <span className="text-sm text-gray-500">
-                      {design.createdByName}
-                    </span>
-                    <span className="text-sm text-gray-500 ml-auto">
-                      {new Date(design.createdAt).toLocaleDateString()}
-                    </span>
+                  <CardFooter className="flex flex-col gap-4">
+                    <div className="flex justify-between items-center w-full">
+                      <span className="text-sm text-gray-500">
+                        {design.createdByName}
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        {new Date(design.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <Button
+                      className="w-full"
+                      onClick={() => handleViewDesign(design.designId)}
+                    >
+                      <Eye className="w-4 h-4 mr-2" />
+                      View Design
+                    </Button>
                   </CardFooter>
                 </Card>
               ))
