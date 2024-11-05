@@ -17,28 +17,36 @@ const designModel_1 = __importDefault(require("../models/designModel"));
 const cloudinaryConfig_1 = __importDefault(require("../config/cloudinaryConfig"));
 const CommentSchema_1 = __importDefault(require("../models/CommentSchema")); // Import Comment model
 const createDesign = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { designId, designTitle, description, createdById, createdByName } = req.body;
-    const designInput = req.file; // File from the request
+    const { designId, designTitle, description } = req.body;
+    const designInput = req.file;
     try {
-        // Upload the image to Cloudinary
+        if (!req.user) {
+            throw new Error('User information not found in token');
+        }
+        if (!designInput) {
+            throw new Error('No file uploaded');
+        }
+        if (!designId) {
+            throw new Error('Design ID is required');
+        }
         const uploadResult = yield cloudinaryConfig_1.default.uploader.upload(designInput.path, {
-            folder: "designs",
+            folder: 'designs',
         });
-        // Create a new design object with the Cloudinary URL
         const newDesign = new designModel_1.default({
-            designId,
-            designInput: uploadResult.secure_url, // Cloudinary image URL
+            designId: Number(designId), // Convert to number
+            designInput: uploadResult.secure_url,
             designTitle,
             description,
-            createdById,
-            createdByName,
+            createdById: req.user.userId,
+            createdByName: req.user.userName,
         });
         yield newDesign.save();
         res.status(201).json(newDesign);
     }
     catch (error) {
+        console.error('Design creation error:', error);
         res.status(500).json({
-            message: error instanceof Error ? error.message : "An unknown error occurred",
+            message: error instanceof Error ? error.message : 'An unknown error occurred',
         });
     }
 });
@@ -74,20 +82,21 @@ const getDesignById = (req, res) => __awaiter(void 0, void 0, void 0, function* 
 });
 exports.getDesignById = getDesignById;
 // New method to get designs by createdById
+// In your designController.ts
+// designController.ts
 const getDesignsByUserId = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { userId } = req.params;
+    var _a;
     try {
-        const designs = yield designModel_1.default.find({ createdById: userId });
-        if (designs.length === 0) {
-            return res
-                .status(404)
-                .json({ message: "No designs found for this user." });
+        if (!((_a = req.user) === null || _a === void 0 ? void 0 : _a.userId)) {
+            return res.status(401).json({ message: 'User not authenticated' });
         }
-        res.status(200).json(designs);
+        const designs = yield designModel_1.default.find({ createdById: req.user.userId });
+        return res.status(200).json(designs); // Return empty array if no designs found
     }
     catch (error) {
-        res.status(500).json({
-            message: error instanceof Error ? error.message : "An unknown error occurred",
+        console.error('Error in getDesignsByUserId:', error);
+        return res.status(500).json({
+            message: error instanceof Error ? error.message : 'An unknown error occurred',
         });
     }
 });

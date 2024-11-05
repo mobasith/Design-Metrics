@@ -3,34 +3,47 @@ import Design from '../models/designModel';
 import cloudinary from '../config/cloudinaryConfig';
 import Comment from '../models/CommentSchema'; // Import Comment model
 
+interface AuthRequest extends Request {
+  user?: { userId: string; userName: string };
+}
 
-export const createDesign = async (req: Request, res: Response) => {
-  const { designId, designTitle, description, createdById, createdByName } =
-    req.body;
-  const designInput: any = req.file; // File from the request
+
+export const createDesign = async (req: AuthRequest, res: Response) => {
+  const { designId, designTitle, description } = req.body;
+  const designInput: any = req.file;
 
   try {
-    // Upload the image to Cloudinary
+    if (!req.user) {
+      throw new Error('User information not found in token');
+    }
+
+    if (!designInput) {
+      throw new Error('No file uploaded');
+    }
+
+    if (!designId) {
+      throw new Error('Design ID is required');
+    }
+
     const uploadResult = await cloudinary.uploader.upload(designInput.path, {
-      folder: "designs",
+      folder: 'designs',
     });
 
-    // Create a new design object with the Cloudinary URL
     const newDesign = new Design({
-      designId,
-      designInput: uploadResult.secure_url, // Cloudinary image URL
+      designId: Number(designId),  // Convert to number
+      designInput: uploadResult.secure_url,
       designTitle,
       description,
-      createdById,
-      createdByName,
+      createdById: req.user.userId,
+      createdByName: req.user.userName,
     });
 
     await newDesign.save();
     res.status(201).json(newDesign);
   } catch (error) {
+    console.error('Design creation error:', error);
     res.status(500).json({
-      message:
-        error instanceof Error ? error.message : "An unknown error occurred",
+      message: error instanceof Error ? error.message : 'An unknown error occurred',
     });
   }
 };
@@ -67,21 +80,20 @@ export const getDesignById = async (req: Request, res: Response) => {
 };
 
 // New method to get designs by createdById
-export const getDesignsByUserId = async (req: Request, res: Response) => {
-  const { userId } = req.params;
-
+// In your designController.ts
+// designController.ts
+export const getDesignsByUserId = async (req: AuthRequest, res: Response) => {
   try {
-    const designs = await Design.find({ createdById: userId });
-    if (designs.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No designs found for this user." });
+    if (!req.user?.userId) {
+      return res.status(401).json({ message: 'User not authenticated' });
     }
-    res.status(200).json(designs);
+
+    const designs = await Design.find({ createdById: req.user.userId });
+    return res.status(200).json(designs); // Return empty array if no designs found
   } catch (error) {
-    res.status(500).json({
-      message:
-        error instanceof Error ? error.message : "An unknown error occurred",
+    console.error('Error in getDesignsByUserId:', error);
+    return res.status(500).json({
+      message: error instanceof Error ? error.message : 'An unknown error occurred',
     });
   }
 };

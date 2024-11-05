@@ -1,43 +1,37 @@
+// designRoutes.ts
 import express from 'express';
-import { createDesign, getDesignById, getDesigns, getDesignsByUserId,addComment,getDesignComments } from '../controllers/designController';
+import { createDesign, getDesignById, getDesigns, getDesignsByUserId, addComment, getDesignComments } from '../controllers/designController';
 import multer from 'multer';
 import path from 'path';
+import authMiddleware from '../middlewares/authMiddleware';
 
 const router = express.Router();
 
-// Define storage for uploaded files
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = path.join(__dirname, "../../uploads"); // Adjust the path as needed
+    const dir = path.join(__dirname, "../../uploads");
     cb(null, dir);
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname); // Unique filename
+    cb(null, Date.now() + "-" + file.originalname);
   },
 });
 
 const upload = multer({ storage });
 
-// Endpoint to create a new design
+// Update the routes order - more specific routes should come first
+router.get("/user/me", authMiddleware, (req, res) => getDesignsByUserId(req, res) as any); // Add this route
+router.get("/:designId", (req, res) => getDesignById(req, res) as any);
+router.get("/", (req, res) => getDesigns(req, res) as any);
+
 router.post(
   "/",
+  authMiddleware,
   upload.single("designInput"),
   (req, res) => createDesign(req, res) as any
 );
 
-// Endpoint to get all designs
-router.get("/", (req, res) => getDesigns(req, res) as any);
-
-// Endpoint to get design by desingId
-router.get("/:designId", (req, res) => getDesignById(req, res) as any);
-
-// Endpoint to get designs by a specific user ID
-router.get("/user/:userId", (req, res) => getDesignsByUserId(req, res) as any);
-
-//endpoint to post a comment on a design 
-router.post('/comments/:designId', addComment);
-
-// New endpoint to retrieve comments for a specific design
-router.get('/getcomments/:designId', getDesignComments);
+router.post('/comments/:designId', authMiddleware, (req, res) => addComment(req, res) as any);
+router.get('/getcomments/:designId', (req, res) => getDesignComments(req, res) as any);
 
 export default router;

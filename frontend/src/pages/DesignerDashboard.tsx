@@ -18,85 +18,143 @@ import { useNavigate } from "react-router-dom";
 
 interface Design {
   _id: string;
-  designInput: string; // Ensure this is a valid path for the image
+  designId: number;  // Make sure this matches your backend model
+  designInput: string;
   designTitle: string;
-  description: string;
-  createdAt: string;
+  description?: string;
+  createdById: number;
+  createdByName: string;
+  createdAt: Date;
+  updatedAt: Date;
+  likeCount: number;
 }
 
 const DesignerDashboard = () => {
   const navigate = useNavigate();
   const [designs, setDesigns] = useState<Design[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [showUploadModal, setShowUploadModal] = useState<boolean>(false);
   const [formData, setFormData] = useState<{
+    designId: number;
     designTitle: string;
-    description: string;
+    description?: string;
     designInput: File | null;
   }>({
+    designId: 0,
     designTitle: "",
     description: "",
     designInput: null,
   });
 
-  const CREATED_BY_ID = "123456";
-  const CREATED_BY_NAME = "Sarah Anderson";
+  // Get token from localStorage
+  const token = localStorage.getItem('token');
+
+  // Create axios instance with authorization header
+  const api = axios.create({
+    baseURL: 'http://localhost:3002/api',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
 
   useEffect(() => {
-    fetchDesigns();
+    checkAuthAndFetchDesigns();
   }, []);
+
+  const checkAuthAndFetchDesigns = async () => {
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+    
+    try {
+      await fetchDesigns();
+    } catch (error) {
+      console.error('Initial load error:', error);
+      if (axios.isAxiosError(error) && (error.response?.status === 401 || error.response?.status === 403)) {
+        navigate('/login');
+      }
+    }
+  };
 
   const fetchDesigns = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("http://localhost:3002/api/designs");
+      setError(null);
+      const response = await api.get('/designs/user/me');
       setDesigns(response.data);
     } catch (err) {
-      setError("Failed to fetch designs");
       console.error("Fetch error:", err);
+      if (axios.isAxiosError(err)) {
+        if (err.response?.status === 404) {
+          setDesigns([]);
+        } else {
+          setError(err.response?.data?.message || "Failed to fetch designs");
+        }
+      } else {
+        setError("An unexpected error occurred");
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const generateDesignId = (): number => {
+    // Generate a unique numeric ID (you might want to adjust this based on your requirements)
+    return Math.floor(Date.now() / 1000); // Unix timestamp as ID
   };
 
   const handleUpload = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
+  
     try {
       if (!formData.designInput) {
         throw new Error("Please select a file");
       }
-
+  
+      const designId = generateDesignId();  // Generate the ID first
+  
       const formDataToSend = new FormData();
-      formDataToSend.append("designInput", formData.designInput);
+      formDataToSend.append("designId", designId.toString());  // Include designId
       formDataToSend.append("designTitle", formData.designTitle);
-      formDataToSend.append("description", formData.description);
-      formDataToSend.append("createdById", CREATED_BY_ID);
-      formDataToSend.append("createdByName", CREATED_BY_NAME);
-      formDataToSend.append("designId", Date.now().toString());
-
-      await axios.post("http://localhost:3002/api/designs", formDataToSend, {
+      formDataToSend.append("designInput", formData.designInput);
+      if (formData.description) {
+        formDataToSend.append("description", formData.description);
+      }
+  
+      const response = await api.post("/designs", formDataToSend, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
-
-      await fetchDesigns();
-      setShowUploadModal(false);
-      setFormData({ designTitle: "", description: "", designInput: null });
+  
+      if (response.status === 201) {
+        await fetchDesigns();
+        setShowUploadModal(false);
+        setFormData({
+          designId: 0,
+          designTitle: "",
+          description: "",
+          designInput: null
+        });
+      }
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to upload design";
-      setError(errorMessage);
       console.error("Upload error:", err);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || "Failed to upload design");
+        if (err.response?.status === 401) {
+          navigate('/login');
+        }
+      } else {
+        setError("An unexpected error occurred");
+      }
     } finally {
       setLoading(false);
     }
   };
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
@@ -107,7 +165,12 @@ const DesignerDashboard = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
+
+  const formatDate = (dateString: Date) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
@@ -117,6 +180,7 @@ const DesignerDashboard = () => {
 
   return (
     <div className="flex h-screen bg-gray-100">
+      {/* Sidebar */}
       <div className="w-64 bg-white shadow-lg">
         <div className="p-6">
           <h1 className="text-2xl font-bold text-indigo-600">Design Hub</h1>
@@ -153,13 +217,17 @@ const DesignerDashboard = () => {
           </div>
         </nav>
         <div className="absolute bottom-0 w-64 p-4">
-          <button className="flex items-center w-full px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+          <button
+            onClick={handleLogout}
+            className="flex items-center w-full px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+          >
             <LogOut className="w-5 h-5 mr-3" />
             Logout
           </button>
         </div>
       </div>
 
+      {/* Main content */}
       <div className="flex-1 overflow-auto">
         <div className="p-8">
           <div className="flex justify-between items-center mb-8">
@@ -176,6 +244,10 @@ const DesignerDashboard = () => {
             <div className="text-center py-8">Loading...</div>
           ) : error ? (
             <div className="text-red-500 text-center py-8">{error}</div>
+          ) : designs.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              No designs found. Click "Upload New Design" to add your first design.
+            </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {designs.map((design) => (
@@ -190,11 +262,14 @@ const DesignerDashboard = () => {
                   </CardHeader>
                   <CardContent>
                     <img
-                      src={design.designInput} // Ensure this is a valid image URL
+                      src={design.designInput}
                       alt={design.designTitle}
                       className="w-full h-48 object-cover rounded-md"
                     />
                     <p className="mt-4 text-gray-600">{design.description}</p>
+                    <p className="mt-2 text-sm text-gray-500">
+                      Likes: {design.likeCount}
+                    </p>
                   </CardContent>
                   <CardFooter className="text-sm text-gray-500">
                     Created on {formatDate(design.createdAt)}
@@ -225,7 +300,7 @@ const DesignerDashboard = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, designTitle: e.target.value })
                   }
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500"
                   required
                 />
               </div>
@@ -242,42 +317,31 @@ const DesignerDashboard = () => {
                   onChange={(e) =>
                     setFormData({ ...formData, description: e.target.value })
                   }
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                  required
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
               <div>
-                <label
-                  htmlFor="designInput"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Select Design File
+                <label className="block text-sm font-medium text-gray-700">
+                  Design Input
                 </label>
                 <input
                   type="file"
-                  id="designInput"
-                  onChange={handleFileChange}
                   accept="image/*"
+                  onChange={handleFileChange}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
                   required
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setShowUploadModal(false)}
-                  className="mr-2 text-gray-600"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
-                  disabled={loading}
-                >
-                  {loading ? "Uploading..." : "Upload"}
-                </button>
-              </div>
+              {error && (
+                <p className="text-red-500 text-sm">{error}</p>
+              )}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 disabled:bg-indigo-400"
+              >
+                {loading ? 'Uploading...' : 'Upload'}
+              </button>
             </form>
           </DialogContent>
         </Dialog>
