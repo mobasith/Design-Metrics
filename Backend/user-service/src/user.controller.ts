@@ -59,25 +59,43 @@ class UserController {
   ];
 
   // Login method
-  async login(req: Request, res: Response): Promise<any> {
-    const { email, password } = req.body;
-    try {
-      const user = await User.findOne({ email });
-      if (!user || !(await bcrypt.compare(password, user.password))) {
-        return res.status(401).json({ message: "Invalid credentials" });
-      }
-
-      // Include roleId in the token payload
-      const token = jwt.sign(
-        { userId: user.userId, roleId: user.roleId },
-        process.env.JWT_SECRET || "your_jwt_secret",
-        { expiresIn: "1h" }
-      );
-      res.json({ token });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
+  // In user.controller.ts - replacing the existing login method
+async login(req: Request, res: Response): Promise<any> {
+  const { email, password } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
+
+    // Create an enhanced token payload with user details
+    const tokenPayload = {
+      userId: user.userId,
+      userName: user.userName,
+      email: user.email,
+      roleId: user.roleId
+    };
+
+    const token = jwt.sign(
+      tokenPayload,
+      process.env.JWT_SECRET || "your_jwt_secret",
+      { expiresIn: "1h" }
+    );
+
+    // Return token along with user details
+    res.json({
+      token,
+      user: {
+        userId: user.userId,
+        userName: user.userName,
+        email: user.email,
+        roleId: user.roleId
+      }
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
+}
 
   async getAllUsers(req: Request, res: Response) {
     try {
