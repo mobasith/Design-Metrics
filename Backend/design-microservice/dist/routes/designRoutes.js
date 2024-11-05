@@ -27,4 +27,8 @@ router.get('/', (req, res) => (0, designController_1.getDesigns)(req, res));
 router.get('/:id', (req, res) => (0, designController_1.getDesignById)(req, res));
 // Endpoint to get designs by a specific user ID
 router.get('/user/:userId', (req, res) => (0, designController_1.getDesignsByUserId)(req, res));
+//endpoint to post a comment on a design 
+router.post('/comments/:designId', designController_1.addComment);
+// New endpoint to retrieve comments for a specific design
+router.get('/getcomments/:designId', designController_1.getDesignComments);
 exports.default = router;

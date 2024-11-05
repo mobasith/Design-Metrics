@@ -9,6 +9,9 @@ interface IDesign extends Document {
   createdByName: string;
   createdAt: Date;
   updatedAt: Date;
+  likeCount:number;
+
+  
 }
 
 const designSchema = new mongoose.Schema<IDesign>({
@@ -20,6 +23,7 @@ const designSchema = new mongoose.Schema<IDesign>({
   createdByName: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
+  likeCount:{type: Number,default:0},
 });
 
 const Design = mongoose.model<IDesign>('Design', designSchema);

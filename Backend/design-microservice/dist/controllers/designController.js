@@ -12,9 +12,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateDesign = exports.getDesignsByUserId = exports.getDesignById = exports.getDesigns = exports.createDesign = void 0;
+exports.getDesignComments = exports.addComment = exports.updateDesign = exports.getDesignsByUserId = exports.getDesignById = exports.getDesigns = exports.createDesign = void 0;
 const designModel_1 = __importDefault(require("../models/designModel"));
 const cloudinaryConfig_1 = __importDefault(require("../config/cloudinaryConfig"));
+const CommentSchema_1 = __importDefault(require("../models/CommentSchema")); // Import Comment model
 const createDesign = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { designId, designTitle, description, createdById, createdByName } = req.body;
     const designInput = req.file; // File from the request
@@ -122,3 +123,38 @@ const updateDesign = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     }
 });
 exports.updateDesign = updateDesign;
+//add a comment to a design , based on the design Id
+const addComment = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { designId } = req.params; // Use the designId from the route parameters
+    const { userId, userName, commentText } = req.body;
+    // Here, we assume designId is already a number and comes from the URL
+    try {
+        const newComment = new CommentSchema_1.default({
+            designId: Number(designId), // Convert to number if needed
+            userId,
+            userName,
+            commentText,
+        });
+        yield newComment.save();
+        res.status(201).json(newComment);
+    }
+    catch (error) {
+        res.status(500).json({ message: error instanceof Error ? error.message : 'An unknown error occurred' });
+    }
+});
+exports.addComment = addComment;
+//get all the comments based on the design Id
+const getDesignComments = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { designId } = req.params; // Use the designId from the route parameters
+    try {
+        const comments = yield CommentSchema_1.default.find({ designId: Number(designId) }); // Query using designId
+        if (comments.length === 0) {
+            return res.status(404).json({ message: 'No comments found for this design.' });
+        }
+        res.status(200).json(comments);
+    }
+    catch (error) {
+        res.status(500).json({ message: error instanceof Error ? error.message : 'An unknown error occurred' });
+    }
+});
+exports.getDesignComments = getDesignComments;

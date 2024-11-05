@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import Design from '../models/designModel';
 import cloudinary from '../config/cloudinaryConfig';
+import Comment from '../models/CommentSchema'; // Import Comment model
+
 
 export const createDesign = async (req: Request, res: Response) => {
     const { designId, designTitle, description, createdById, createdByName } = req.body;
@@ -106,3 +108,39 @@ export const updateDesign = async (req: Request, res: Response) => {
         }
     }
 };
+
+//add a comment to a design , based on the design Id
+export const addComment = async (req: Request, res: Response) => {
+    const { designId } = req.params; // Use the designId from the route parameters
+    const { userId, userName, commentText } = req.body;
+
+    // Here, we assume designId is already a number and comes from the URL
+    try {
+        const newComment = new Comment({
+            designId: Number(designId), // Convert to number if needed
+            userId,
+            userName,
+            commentText,
+        });
+
+        await newComment.save();
+        res.status(201).json(newComment);
+    } catch (error) {
+        res.status(500).json({ message: error instanceof Error ? error.message : 'An unknown error occurred' });
+    }
+};
+//get all the comments based on the design Id
+export const getDesignComments = async (req: Request, res: Response):Promise<any> => {
+    const { designId } = req.params; // Use the designId from the route parameters
+
+    try {
+        const comments = await Comment.find({ designId: Number(designId) }); // Query using designId
+        if (comments.length === 0) {
+            return res.status(404).json({ message: 'No comments found for this design.' });
+        }
+        res.status(200).json(comments);
+    } catch (error) {
+        res.status(500).json({ message: error instanceof Error ? error.message : 'An unknown error occurred' });
+    }
+};
+

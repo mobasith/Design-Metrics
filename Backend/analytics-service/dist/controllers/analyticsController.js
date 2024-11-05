@@ -34,20 +34,22 @@ class AnalyticsController {
                     for (const key in feedbackData) {
                         const columnData = feedbackData[key];
                         console.log(`Processing column: ${key}, Column Data:`, columnData);
+                        const dataType = this.detectDataType(columnData);
                         if (Array.isArray(columnData) && columnData.length > 500) {
-                            const prompt = this.createPrompt(key, columnData);
+                            const prompt = this.createPrompt(key, columnData, dataType);
                             try {
                                 const jsonData = yield fetchFromAPIWithRetry(prompt, model);
-                                console.log(`Transformed data for column ${key}:`, jsonData);
-                                scaledData[key] = jsonData;
+                                const structuredData = this.structureResponse(jsonData, dataType);
+                                console.log(`Transformed data for column ${key}:`, structuredData);
+                                scaledData[key] = structuredData;
                             }
                             catch (apiError) {
                                 console.error(`API request failed for ${key}:`, apiError.message);
-                                scaledData[key] = columnData; // Fallback to original data
+                                scaledData[key] = this.basicDataProcessing(columnData, dataType);
                             }
                         }
                         else {
-                            scaledData[key] = columnData; // Directly assign if not large data
+                            scaledData[key] = this.basicDataProcessing(columnData, dataType);
                         }
                     }
                 }
@@ -70,23 +72,168 @@ class AnalyticsController {
             }
         });
     }
-    createPrompt(columnName, columnData) {
+    detectDataType(data) {
+        // Ensure data is an array
+        const dataArray = Array.isArray(data) ? data : [data];
+        if (dataArray.length === 0)
+            return 'text';
+        const sample = dataArray.find(item => item !== null && item !== undefined);
+        if (!sample)
+            return 'text';
+        if (!isNaN(Number(sample)))
+            return 'numerical';
+        if (Date.parse(sample))
+            return 'date';
+        return 'categorical';
+    }
+    basicDataProcessing(data, dataType) {
+        // Ensure data is an array
+        const dataArray = Array.isArray(data) ? data : [data];
+        const cleanData = dataArray.filter(item => item !== null && item !== undefined);
+        switch (dataType) {
+            case 'numerical': {
+                const numbers = cleanData.map(Number).filter(n => !isNaN(n));
+                const sum = numbers.reduce((a, b) => a + b, 0);
+                return {
+                    type: 'numerical',
+                    summary: {
+                        average: numbers.length ? sum / numbers.length : 0,
+                        min: numbers.length ? Math.min(...numbers) : 0,
+                        max: numbers.length ? Math.max(...numbers) : 0,
+                        count: numbers.length
+                    },
+                    data: numbers.slice(0, 100)
+                };
+            }
+            case 'categorical': {
+                const frequencyMap = cleanData.reduce((acc, val) => {
+                    acc[val] = (acc[val] || 0) + 1;
+                    return acc;
+                }, {});
+                const sortedEntries = Object.entries(frequencyMap)
+                    .sort(([, a], [, b]) => b - a)
+                    .slice(0, 10);
+                const mostCommon = sortedEntries.reduce((obj, [key, value]) => {
+                    obj[key] = value;
+                    return obj;
+                }, {});
+                return {
+                    type: 'categorical',
+                    summary: {
+                        uniqueValues: Object.keys(frequencyMap).length,
+                        mostCommon
+                    },
+                    data: frequencyMap
+                };
+            }
+            case 'date': {
+                const dates = cleanData
+                    .map(d => new Date(d))
+                    .filter(d => !isNaN(d.getTime()));
+                if (dates.length === 0) {
+                    return {
+                        type: 'date',
+                        summary: {
+                            earliest: new Date(),
+                            latest: new Date(),
+                            count: 0
+                        },
+                        data: []
+                    };
+                }
+                return {
+                    type: 'date',
+                    summary: {
+                        earliest: new Date(Math.min(...dates.map(d => d.getTime()))),
+                        latest: new Date(Math.max(...dates.map(d => d.getTime()))),
+                        count: dates.length
+                    },
+                    data: dates.slice(0, 100).map(d => d.toISOString().split('T')[0])
+                };
+            }
+            default:
+                return {
+                    type: 'text',
+                    summary: {
+                        count: cleanData.length
+                    },
+                    data: cleanData.slice(0, 100)
+                };
+        }
+    }
+    createPrompt(columnName, columnData, dataType) {
         return `
-Please process and summarize the following data. Return the results in JSON format with the transformed values for the field.
+Analyze and transform the following dataset for visualization purposes. 
+Column Name: ${columnName}
+Data Type: ${dataType}
 
-    Remove any null or empty values from the column.
-    For numerical data (more than 500 entries), provide the following statistics:
-        Average
-        Sum
-        Minimum
-        Maximum
-        Median
-    For categorical data, summarize with counts for each unique category.
-    For date columns, standardize the format to YYYY-MM-DD.
+Required Output Format:
+{
+    "type": "${dataType}",
+    "summary": {
+        // For numerical data:
+        "average": number,
+        "median": number,
+        "min": number,
+        "max": number,
+        "standardDeviation": number,
+        "quartiles": [number, number, number],
+        "distribution": {
+            "bins": [number ranges],
+            "counts": [frequencies]
+        }
+        
+        // For categorical data:
+        "totalCount": number,
+        "uniqueCategories": number,
+        "topCategories": {
+            "category1": count,
+            "category2": count,
+            ...
+        },
+        "distribution": {
+            "categories": [top 10 categories],
+            "counts": [corresponding counts]
+        }
+        
+        // For date data:
+        "timeRange": {
+            "start": "YYYY-MM-DD",
+            "end": "YYYY-MM-DD"
+        },
+        "frequency": {
+            "daily": {"YYYY-MM-DD": count},
+            "monthly": {"YYYY-MM": count},
+            "yearly": {"YYYY": count}
+        }
+    },
+    "visualizationReady": {
+        "pieChart": [{"label": string, "value": number}],
+        "lineChart": [{"x": string/number, "y": number}],
+        "barChart": [{"category": string, "value": number}]
+    }
+}
 
-Input Column: ${columnName} Data: ${JSON.stringify(columnData)}
+Input Data: ${JSON.stringify(columnData.slice(0, 1000))}
 
-Return only the transformed data in JSON format, with each column populated with cleaned or summarized values.`;
+Rules:
+1. Remove all null, undefined, or invalid values before processing
+2. For numerical data, create meaningful distribution bins
+3. For categorical data, group rare categories into "Others" if they represent less than 1% of total
+4. For dates, provide aggregated counts by different time periods
+5. Format all numbers to maximum 2 decimal places
+6. Include pre-formatted data structures ready for common chart types
+7. Return ONLY valid JSON - no explanations or additional text`;
+    }
+    structureResponse(response, dataType) {
+        if (!response || typeof response !== 'object') {
+            throw new Error('Invalid response structure');
+        }
+        const requiredFields = ['type', 'summary', 'visualizationReady'];
+        if (!requiredFields.every(field => field in response)) {
+            throw new Error('Missing required fields in response');
+        }
+        return response;
     }
 }
 function fetchFromAPIWithRetry(prompt_1, model_1) {
@@ -94,16 +241,13 @@ function fetchFromAPIWithRetry(prompt_1, model_1) {
         for (let i = 0; i < retries; i++) {
             try {
                 const apiResponse = yield model.generateContent(prompt);
-                // Log the API response object for debugging
-                console.log("API Response Object:", apiResponse);
-                // Extract response text properly
                 const responseText = yield apiResponse.response.text();
-                console.log("Raw Gemini API response:", responseText); // Log the raw response for debugging
-                // Check if response is valid JSON
                 try {
-                    const jsonData = JSON.parse(responseText);
-                    console.log("Parsed JSON Data:", jsonData); // Log parsed data to confirm structure
-                    return jsonData;
+                    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+                    if (!jsonMatch) {
+                        throw new Error('No JSON object found in response');
+                    }
+                    return JSON.parse(jsonMatch[0]);
                 }
                 catch (jsonError) {
                     console.error("Invalid JSON format received:", jsonError);
@@ -116,7 +260,7 @@ function fetchFromAPIWithRetry(prompt_1, model_1) {
                 console.error(`Attempt ${i + 1} failed:`, error);
                 if (i < retries - 1) {
                     yield new Promise(resolve => setTimeout(resolve, delay));
-                    delay *= 2; // Exponential backoff
+                    delay *= 2;
                 }
                 else {
                     throw new Error("API request failed after multiple attempts");

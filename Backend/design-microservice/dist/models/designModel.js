@@ -13,6 +13,7 @@ const designSchema = new mongoose_1.default.Schema({
     createdByName: { type: String, required: true },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
+    likeCount: { type: Number, default: 0 },
 });
 const Design = mongoose_1.default.model('Design', designSchema);
 exports.default = Design;

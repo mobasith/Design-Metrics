@@ -1,5 +1,5 @@
 import express from 'express';
-import { createDesign, getDesignById, getDesigns, getDesignsByUserId } from '../controllers/designController';
+import { createDesign, getDesignById, getDesigns, getDesignsByUserId,addComment,getDesignComments } from '../controllers/designController';
 import multer from 'multer';
 import path from 'path';
 
@@ -29,5 +29,11 @@ router.get('/:id', (req,res) => getDesignById(req, res) as any);
 
 // Endpoint to get designs by a specific user ID
 router.get('/user/:userId', (req, res) => getDesignsByUserId(req, res) as any);
+
+//endpoint to post a comment on a design 
+router.post('/comments/:designId', addComment);
+
+// New endpoint to retrieve comments for a specific design
+router.get('/getcomments/:designId', getDesignComments);
 
 export default router;
