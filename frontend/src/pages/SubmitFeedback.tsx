@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "http://localhost:3005/api";
+  process.env.REACT_APP_API_BASE_URL || "http://localhost:3001/api";
 
 interface FeedbackFormData {
   design_id: number | null;
@@ -22,7 +22,7 @@ const designs = [
 const SubmitFeedback: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [designId, setDesignId] = useState<number | null>(null);
-  const [designName, setDesignName] = useState<string>(""); // State for design name
+  const [designName, setDesignName] = useState<string>("");
   const [feedback, setFeedback] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
   const [showDesigns, setShowDesigns] = useState<boolean>(false);
@@ -40,16 +40,26 @@ const SubmitFeedback: React.FC = () => {
     setIsSubmitting(true);
     setError("");
 
+    if (!file) {
+      setError("Please select a file to upload");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!feedback) {
+      setError("Description is required");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const formData = new FormData();
-      const feedbackData: FeedbackFormData = {
-        design_id: designId,
-        description: feedback,
-      };
-
-      formData.append("feedback", JSON.stringify(feedbackData));
-      if (file) {
-        formData.append("file", file);
+      formData.append('file', file);
+      formData.append('description', feedback);
+      
+      // Optionally add design_id if it's needed
+      if (designId) {
+        formData.append('design_id', designId.toString());
       }
 
       const response = await axios.post(
@@ -57,7 +67,7 @@ const SubmitFeedback: React.FC = () => {
         formData,
         {
           headers: {
-            "Content-Type": "multipart/form-data",
+            'Content-Type': 'multipart/form-data',
           },
         }
       );
@@ -66,6 +76,7 @@ const SubmitFeedback: React.FC = () => {
         navigate("/dashboard");
       }
     } catch (err) {
+      console.error('Upload error:', err);
       setError(
         err instanceof Error ? err.message : "Failed to submit feedback"
       );
@@ -132,7 +143,7 @@ const SubmitFeedback: React.FC = () => {
                   className="cursor-pointer hover:bg-gray-100 p-3 transition duration-200"
                   onClick={() => {
                     setDesignId(design.id);
-                    setDesignName(design.name); // Set the design name
+                    setDesignName(design.name);
                     setSearchTerm("");
                     setShowDesigns(false);
                   }}
@@ -152,9 +163,9 @@ const SubmitFeedback: React.FC = () => {
             Selected Design
           </label>
           <input
-            type="text" // Changed to text to show the design name
+            type="text"
             id="designId"
-            value={designName} // Show design name
+            value={designName}
             readOnly
             className="mt-1 block w-full border-gray-300 border rounded-md shadow-sm bg-gray-100 p-2"
           />
@@ -165,7 +176,7 @@ const SubmitFeedback: React.FC = () => {
             htmlFor="feedback"
             className="block text-lg font-medium text-gray-700 mb-2"
           >
-            Description
+            Description (Required)
           </label>
           <textarea
             id="feedback"
@@ -182,13 +193,14 @@ const SubmitFeedback: React.FC = () => {
             htmlFor="file"
             className="block text-lg font-medium text-gray-700 mb-2"
           >
-            Upload File (Excel, CSS, PDF)
+            Upload File (Excel, CSS, PDF) (Required)
           </label>
           <input
             type="file"
             id="file"
             accept=".xls,.xlsx,.css,.pdf"
             onChange={handleFileChange}
+            required
             className="mt-1 block w-full border-gray-300 border rounded-md shadow-sm focus:ring focus:ring-blue-500 p-2"
           />
         </div>

@@ -19,7 +19,7 @@ app.use((0, cors_1.default)()); // This will allow all origins to access your AP
 //   origin: 'http://localhost:3000' // Only allow requests from this origin
 // }));
 app.use(express_1.default.json());
-app.use('/api/designs', designRoutes_1.default);
+app.use("/api/designs", designRoutes_1.default);
 // Start the server
 const PORT = process.env.PORT || 3002;
 app.listen(PORT, () => {
