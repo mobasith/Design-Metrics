@@ -71,6 +71,7 @@ class UserController {
         });
     }
     // Login method
+    // In user.controller.ts - replacing the existing login method
     login(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             const { email, password } = req.body;
@@ -79,9 +80,24 @@ class UserController {
                 if (!user || !(yield bcryptjs_1.default.compare(password, user.password))) {
                     return res.status(401).json({ message: "Invalid credentials" });
                 }
-                // Include roleId in the token payload
-                const token = jsonwebtoken_1.default.sign({ userId: user.userId, roleId: user.roleId }, process.env.JWT_SECRET || "your_jwt_secret", { expiresIn: "1h" });
-                res.json({ token });
+                // Create an enhanced token payload with user details
+                const tokenPayload = {
+                    userId: user.userId,
+                    userName: user.userName,
+                    email: user.email,
+                    roleId: user.roleId
+                };
+                const token = jsonwebtoken_1.default.sign(tokenPayload, process.env.JWT_SECRET || "your_jwt_secret", { expiresIn: "1h" });
+                // Return token along with user details
+                res.json({
+                    token,
+                    user: {
+                        userId: user.userId,
+                        userName: user.userName,
+                        email: user.email,
+                        roleId: user.roleId
+                    }
+                });
             }
             catch (error) {
                 res.status(500).json({ error: error.message });
