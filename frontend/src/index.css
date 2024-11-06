@@ -1,3 +1,16 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Import Proxima Nova font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Proxima+Nova&display=swap');
+
+/* Apply Proxima Nova font to headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Proxima Nova', sans-serif;
+}
+
+/* Apply it to body text as well */
+body {
+  font-family: 'Proxima Nova', sans-serif;
+}

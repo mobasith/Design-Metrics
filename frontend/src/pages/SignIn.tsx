@@ -242,7 +242,6 @@ const SignIn: React.FC = () => {
               onChange={handleChange}
               type="email"
               placeholder="Enter your email"
-              error={errors.email}
               required
             />
 
@@ -254,7 +253,6 @@ const SignIn: React.FC = () => {
                 onChange={handleChange}
                 type={showPassword ? "text" : "password"}
                 placeholder="Enter your password"
-                error={errors.password}
                 required
               />
               <button

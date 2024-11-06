@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Loader2, AlertCircle, Search, Sliders } from "lucide-react";
+import { Loader2, AlertCircle, Search, Sliders, Heart, Bookmark, MessageSquare } from "lucide-react";
 import { Alert, AlertDescription } from "../components/ui/alert";
 import { Input } from "../components/ui/input";
 import {
@@ -22,13 +22,16 @@ interface Design {
   createdByName: string;
   createdAt: string;
   updatedAt: string;
-  rating?: number;
+  likeCount?: number;
+  commentCount?: number;
 }
 
 const Sidebar = () => {
   return (
     <div className="w-64 h-full bg-white shadow-md fixed top-0 left-0 p-5">
-      <h2 className="text-lg font-bold mb-4">User Menu</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">DesignMetrics</h2>
+      </div>
       <nav className="mt-6">
         <div className="px-4">
           <div className="flex flex-col space-y-2">
@@ -73,13 +76,21 @@ const Sidebar = () => {
   );
 };
 
-const DesignCard: React.FC<Design> = ({
+const DesignCard: React.FC<Design & { onLike: () => void }> = ({
   designTitle,
   description,
   createdByName,
-  rating,
+  likeCount = 0,
+  commentCount = 0,
   designInput,
+  onLike,
 }) => {
+  const [isBookmarked, setIsBookmarked] = useState(false);
+
+  const toggleBookmark = () => {
+    setIsBookmarked(!isBookmarked);
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
       <img
@@ -94,9 +105,19 @@ const DesignCard: React.FC<Design> = ({
         <h3 className="text-lg font-semibold">{designTitle}</h3>
         <p className="text-gray-500">{description}</p>
         <p className="text-gray-400 text-sm">By {createdByName}</p>
-        <p className="text-yellow-500">
-          Rating: {rating ? rating.toFixed(1) : "N/A"}
-        </p>
+        <div className="flex items-center justify-between mt-4">
+          <button onClick={onLike} className="flex items-center text-pink-600 space-x-1">
+            <Heart className="w-5 h-5" />
+            <span>{likeCount}</span>
+          </button>
+          <button className="flex items-center text-gray-500 space-x-1">
+            <MessageSquare className="w-5 h-5" />
+            <span>{commentCount}</span>
+          </button>
+          <button onClick={toggleBookmark} className={`flex items-center space-x-1 ${isBookmarked ? 'text-blue-600' : 'text-gray-500'}`}>
+            <Bookmark className="w-5 h-5" />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -131,6 +152,14 @@ const AllDesigns = () => {
     }
   };
 
+  const handleLike = (id: string) => {
+    setDesigns((prevDesigns) =>
+      prevDesigns.map((design) =>
+        design._id === id ? { ...design, likeCount: (design.likeCount || 0) + 1 } : design
+      )
+    );
+  };
+
   const filteredAndSortedDesigns = designs
     .filter((design) =>
       design.designTitle.toLowerCase().includes(searchTerm.toLowerCase())
@@ -146,7 +175,7 @@ const AllDesigns = () => {
             new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
           );
         case "rating":
-          return (b.rating || 0) - (a.rating || 0);
+          return (b.likeCount || 0) - (a.likeCount || 0);
         default:
           return 0;
       }
@@ -201,91 +230,36 @@ const AllDesigns = () => {
               <Button
                 variant={viewMode === "grid" ? "default" : "outline"}
                 onClick={() => setViewMode("grid")}
-                className="px-3"
               >
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16m-7 6h7"
-                  />
-                </svg>
+                Grid View
               </Button>
               <Button
                 variant={viewMode === "list" ? "default" : "outline"}
                 onClick={() => setViewMode("list")}
-                className="px-3"
               >
-                <svg
-                  className="h-4 w-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
+                List View
               </Button>
             </div>
           </div>
         </div>
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center p-12">
-            <Loader2 className="h-12 w-12 animate-spin text-blue-500 mb-4" />
-            <p className="text-gray-600">Loading amazing designs...</p>
+          <div className="flex justify-center">
+            <Loader2 className="animate-spin w-10 h-10 text-blue-600" />
           </div>
         ) : (
           <div
-            className={`${
-              viewMode === "grid"
-                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                : "flex flex-col gap-4"
-            }`}
+            className={`grid ${
+              viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"
+            } gap-6`}
           >
             {filteredAndSortedDesigns.map((design) => (
-              <div
+              <DesignCard
                 key={design._id}
-                className={`transform transition-transform duration-200 hover:-translate-y-1 ${
-                  viewMode === "list" ? "w-full" : ""
-                }`}
-              >
-                <DesignCard
-                  designId={design.designId}
-                  designTitle={design.designTitle}
-                  description={design.description}
-                  createdByName={design.createdByName}
-                  rating={design.rating}
-                  designInput={design.designInput}
-                  _id={design._id}
-                  createdById={design.createdById}
-                  createdAt={design.createdAt}
-                  updatedAt={design.updatedAt}
-                />
-              </div>
+                {...design}
+                onLike={() => handleLike(design._id)}
+              />
             ))}
-          </div>
-        )}
-
-        {!loading && filteredAndSortedDesigns.length === 0 && (
-          <div className="text-center py-12">
-            <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-700">
-              No designs found
-            </h3>
-            <p className="text-gray-500">
-              Try adjusting your search or filters
-            </p>
           </div>
         )}
       </main>
