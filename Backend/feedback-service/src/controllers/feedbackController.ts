@@ -1,8 +1,25 @@
 import { Request, Response } from 'express';
 import FeedbackModel from '../models/feedbackModel';
-import exp from 'constants';
+import axios from 'axios';
 import XLSX from 'xlsx';
 import fs from 'fs';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+dotenv.config();
+
+// Interfaces
+interface JwtPayload {
+    userId: number;
+    userName: string;
+    email: string;
+    roleId: string;
+}
+
+// Environment configuration check
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    console.error('WARNING: JWT_SECRET is not set in environment variables');
+}
 
 // Create new feedback
 export const create = async (req: Request, res: Response) => {
@@ -47,8 +64,7 @@ export const getFeedbackById = async (req: Request, res: Response) => {
     }
 };
 
-// modify the feedback by Id
-
+// Update feedback by ID
 export const updateFeedback = async (req: Request, res: Response) => {
     try {
         const feedback = await FeedbackModel.findByIdAndUpdate(
@@ -57,7 +73,7 @@ export const updateFeedback = async (req: Request, res: Response) => {
             { new: true }
         );
         if (!feedback) {
-            return res.status(404).json({ message: "Feedback ypur looking is not found" });
+            return res.status(404).json({ message: "Feedback you're looking for is not found" });
         }
         
         return res.status(200).json(feedback);
@@ -86,11 +102,12 @@ export const remove = async (req: Request, res: Response) => {
     }
 };
 
+// Get feedback by design ID
 export const getFeedbackByDesignId = async (req: Request, res: Response) => {
     const { designId } = req.params;
 
     try {
-        const feedbacks = await FeedbackModel.find({ design_id: designId }); // Replace 'design_id' with your actual field name
+        const feedbacks = await FeedbackModel.find({ design_id: designId });
         if (feedbacks.length === 0) {
             return res.status(404).json({ message: 'No feedback found for this design ID.' });
         }
@@ -101,49 +118,91 @@ export const getFeedbackByDesignId = async (req: Request, res: Response) => {
     }
 };
 
-//upload excel data as feedback
-// upload excel data as feedback
+// Upload feedback with Excel file
 export const uploadFeedback = async (req: Request, res: Response) => {
     try {
+        // Validate file upload
         if (!req.file) {
             return res.status(400).json({ error: 'No file uploaded' });
         }
 
-        // Get the 'description' field from form-data
+        // Validate description
         const { description } = req.body;
         if (!description) {
             return res.status(400).json({ error: 'Description is required' });
         }
 
-        // Read Excel file
-        const workbook = XLSX.readFile(req.file.path);
-        const sheetName = workbook.SheetNames[0];
-        const sheetData: unknown[][] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
+        // Extract and verify JWT token
+        const authHeader = req.headers.authorization;
+        if (!authHeader) {
+            return res.status(401).json({ error: 'No authorization token provided' });
+        }
 
-        // Delete file after reading
-        fs.unlinkSync(req.file.path);
+        const token = authHeader.replace('Bearer ', '');
+        
+        try {
+            // Verify JWT token
+            if (!JWT_SECRET) {
+                throw new Error('JWT_SECRET is not configured');
+            }
 
-        // Separate headers and rows
-        const headers: string[] = sheetData[0] as string[];
-        const rows: any[][] = sheetData.slice(1) as any[][];
+            const decodedToken = jwt.verify(token, JWT_SECRET) as JwtPayload;
+            const userId:any = decodedToken.userId;
 
-        // Group values by column
-        const groupedData: { [key: string]: any[] } = {};
-        headers.forEach((header, index) => {
-            groupedData[header] = rows.map((row: any[]) => row[index]);
-        });
+            if (!userId) {
+                return res.status(401).json({ error: 'Invalid token: userId not found in payload' });
+            }
 
-        // Add description to groupedData
-        groupedData['description'] = description;
+            // Read Excel file
+            const workbook = XLSX.readFile(req.file.path);
+            const sheetName = workbook.SheetNames[0];
+            const sheetData: unknown[][] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1 });
 
-        // Log groupedData to verify structure before saving
-        console.log("Grouped Data being saved:", groupedData);
+            // Clean up uploaded file
+            fs.unlinkSync(req.file.path);
 
-        // Store grouped data as a single document in MongoDB
-        const feedback = new FeedbackModel(groupedData);
-        await feedback.save();
+            // Process Excel data
+            const headers: string[] = sheetData[0] as string[];
+            const rows: any[][] = sheetData.slice(1) as any[][];
 
-        return res.status(201).json({ message: 'Data uploaded successfully', data: groupedData });
+            // Group values by column
+            const groupedData: { [key: string]: any[] } = {};
+            headers.forEach((header, index) => {
+                groupedData[header] = rows.map((row: any[]) => row[index]);
+            });
+
+            // Add metadata
+            groupedData['description'] = description;
+            groupedData['userId'] = userId;
+
+            // Store feedback data
+            const feedback = new FeedbackModel(groupedData);
+            await feedback.save();
+
+            // Send to analytics service
+            try {
+                await axios.post('http://localhost:3003/api/analytics/upload', {
+                    mongoId: feedback._id,
+                    userId: userId
+                });
+            } catch (analyticsError) {
+                console.error('Error sending data to analytics service:', analyticsError);
+                // Continue execution even if analytics service fails
+            }
+
+            return res.status(201).json({ 
+                message: 'Data uploaded and sent for analysis successfully', 
+                data: groupedData,
+                feedbackId: feedback._id 
+            });
+
+        } catch (jwtError) {
+            console.error('JWT verification failed:', jwtError);
+            return res.status(401).json({ 
+                error: 'Invalid authorization token',
+                details: process.env.NODE_ENV === 'development' ? (jwtError as Error).message : undefined
+            });
+        }
 
     } catch (error) {
         console.error('Error uploading feedback:', error);
@@ -151,12 +210,11 @@ export const uploadFeedback = async (req: Request, res: Response) => {
     }
 };
 
-// Get feedback by MongoDB ID (automatically assigned)
+// Get feedback by MongoDB ID
 export const getFeedbackByMongoId = async (req: Request, res: Response) => {
-    const { mongoId } = req.params; // Expecting the ID to be passed in the request parameters
+    const { mongoId } = req.params;
 
     try {
-        // Find feedback using the provided MongoDB ID
         const feedback = await FeedbackModel.findById(mongoId);
         if (!feedback) {
             return res.status(404).json({ message: "Feedback not found with the provided MongoDB ID" });
@@ -170,12 +228,11 @@ export const getFeedbackByMongoId = async (req: Request, res: Response) => {
     }
 };
 
-// Get only the 'description' field by MongoDB ID
-export const getDescriptionByMongoId = async (req: Request, res: Response):Promise<any> => {
-    const { mongoId } = req.params; // Expecting the ID to be passed in the request parameters
+// Get description by MongoDB ID
+export const getDescriptionByMongoId = async (req: Request, res: Response): Promise<any> => {
+    const { mongoId } = req.params;
 
     try {
-        // Find feedback by MongoDB ID and include only the 'description' field
         const feedback = await FeedbackModel.findById(mongoId, { description: 1, _id: 0 });
         if (!feedback) {
             return res.status(404).json({ message: "Feedback not found with the provided MongoDB ID" });
@@ -188,5 +245,3 @@ export const getDescriptionByMongoId = async (req: Request, res: Response):Promi
         return res.status(500).json({ error: "Error in getting description by MongoDB ID" });
     }
 };
-
-
