@@ -36,7 +36,7 @@ const Sidebar = () => {
         <div className="px-4">
           <div className="flex flex-col space-y-2">
             <a
-              href="/dashboard"
+              href="/user-dashboard"
               className="flex items-center px-4 py-2 text-gray-700 bg-gray-100 rounded-lg"
             >
               <Home className="w-5 h-5 mr-3" />
@@ -49,13 +49,13 @@ const Sidebar = () => {
               <Layout className="w-5 h-5 mr-3" />
               All Designs
             </a>
-            <a
+            {/* <a
               href="/upload"
               className="flex items-center px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
             >
               <Upload className="w-5 h-5 mr-3" />
               Upload Design
-            </a>
+            </a> */}
             <a
               href="/profile"
               className="flex items-center px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"

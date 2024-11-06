@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Layout, LayoutGrid, Upload, Settings, LogOut } from "lucide-react";
+import { Layout, LayoutGrid, Upload, Settings, LogOut, FileText } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +18,7 @@ import { useNavigate } from "react-router-dom";
 
 interface Design {
   _id: string;
-  designId: number;  // Make sure this matches your backend model
+  designId: number;
   designInput: string;
   designTitle: string;
   description?: string;
@@ -101,7 +101,6 @@ const DesignerDashboard = () => {
   };
 
   const generateDesignId = (): number => {
-    // Generate a unique numeric ID (you might want to adjust this based on your requirements)
     return Math.floor(Date.now() / 1000); // Unix timestamp as ID
   };
 
@@ -155,6 +154,7 @@ const DesignerDashboard = () => {
       setLoading(false);
     }
   };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
@@ -207,6 +207,20 @@ const DesignerDashboard = () => {
                 Upload Design
               </button>
               <button
+                onClick={() => navigate("/dashboard")}
+                className="flex items-center px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              >
+                <Layout className="w-5 h-5 mr-3" />
+                Analytics
+              </button>
+              <button
+                onClick={() => navigate("/submit-feedback")}
+                className="flex items-center px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              >
+                <FileText className="w-5 h-5 mr-3" />
+                Upload Feedback
+              </button>
+              <button
                 onClick={() => navigate("/profile")}
                 className="flex items-center px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
               >
@@ -253,99 +267,86 @@ const DesignerDashboard = () => {
               {designs.map((design) => (
                 <Card
                   key={design._id}
-                  className="hover:shadow-lg transition-shadow"
+                  className="w-full bg-white shadow-md rounded-md"
                 >
                   <CardHeader>
-                    <CardTitle className="text-lg">
-                      {design.designTitle}
-                    </CardTitle>
+                    <CardTitle className="text-lg font-semibold">{design.designTitle}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <img
-                      src={design.designInput}
-                      alt={design.designTitle}
-                      className="w-full h-48 object-cover rounded-md"
-                    />
-                    <p className="mt-4 text-gray-600">{design.description}</p>
-                    <p className="mt-2 text-sm text-gray-500">
-                      Likes: {design.likeCount}
-                    </p>
+                    <p className="text-sm text-gray-600">{design.description}</p>
                   </CardContent>
-                  <CardFooter className="text-sm text-gray-500">
-                    Created on {formatDate(design.createdAt)}
+                  <CardFooter>
+                    <p className="text-sm text-gray-500">{formatDate(design.createdAt)}</p>
                   </CardFooter>
                 </Card>
               ))}
             </div>
           )}
         </div>
+      </div>
 
-        <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Upload Design</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleUpload} className="space-y-4">
-              <div>
-                <label
-                  htmlFor="designTitle"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Title
-                </label>
-                <input
-                  type="text"
-                  id="designTitle"
-                  value={formData.designTitle}
-                  onChange={(e) =>
-                    setFormData({ ...formData, designTitle: e.target.value })
-                  }
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500"
-                  required
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="description"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Description
-                </label>
-                <textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Design Input
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                  required
-                />
-              </div>
-              {error && (
-                <p className="text-red-500 text-sm">{error}</p>
-              )}
+      {/* Upload Design Modal */}
+      <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Upload New Design</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleUpload} className="space-y-4">
+            <div>
+              <label htmlFor="designTitle" className="block text-sm font-semibold">
+                Design Title
+              </label>
+              <input
+                type="text"
+                id="designTitle"
+                name="designTitle"
+                value={formData.designTitle}
+                onChange={(e) =>
+                  setFormData({ ...formData, designTitle: e.target.value })
+                }
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-md"
+              />
+            </div>
+            <div>
+              <label htmlFor="description" className="block text-sm font-semibold">
+                Description
+              </label>
+              <textarea
+                id="description"
+                name="description"
+                value={formData.description || ""}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-md"
+              />
+            </div>
+            <div>
+              <label htmlFor="designInput" className="block text-sm font-semibold">
+                Design File (Image)
+              </label>
+              <input
+                type="file"
+                id="designInput"
+                name="designInput"
+                onChange={handleFileChange}
+                required
+                accept="image/*"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md"
+              />
+            </div>
+            <div className="flex justify-end">
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full bg-indigo-600 text-white py-2 rounded-md hover:bg-indigo-700 disabled:bg-indigo-400"
+                className="bg-indigo-600 text-white px-6 py-2 rounded-lg"
               >
-                {loading ? 'Uploading...' : 'Upload'}
+                {loading ? "Uploading..." : "Upload"}
               </button>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

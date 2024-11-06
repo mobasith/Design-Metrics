@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ArrowLeft, Eye, X } from 'lucide-react';
+import { Eye } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
-import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 
 interface Designer {
@@ -60,7 +59,7 @@ const DesignersPage = () => {
         throw new Error('Failed to fetch designs');
       }
       const data = await response.json();
-      const designerDesignsList = data.filter((design: Design) => 
+      const designerDesignsList = data.filter((design: Design) =>
         design.createdByName.toLowerCase() === designer.userName?.toLowerCase()
       );
       setDesignerDesigns(designerDesignsList);
@@ -85,7 +84,7 @@ const DesignersPage = () => {
   const handleViewDesigns = (designer: Designer) => {
     setSelectedDesigner(designer);
     fetchDesignerDesigns(designer);
-    setSearchQuery(''); // Clear search when selecting a designer
+    setSearchQuery('');
   };
 
   const handleBackToDesigners = () => {
@@ -106,24 +105,10 @@ const DesignersPage = () => {
     <div className="p-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <Button variant="ghost" onClick={handleGoToDashboard} className="flex items-center gap-2">
-          <ArrowLeft className="h-4 w-4" />
           Back to Dashboard
         </Button>
         <h1 className="text-2xl font-bold">Designers</h1>
       </div>
-
-      {!selectedDesigner && (
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-          <Input
-            type="text"
-            placeholder="Search designers..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-      )}
 
       {isLoading ? (
         <div className="text-center">Loading...</div>
@@ -133,23 +118,25 @@ const DesignersPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredDesigners.length > 0 ? (
                 filteredDesigners.map((designer) => (
-                  <Card key={designer.id} className="overflow-hidden">
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-semibold text-lg">{designer.userName || 'Unnamed Designer'}</h3>
-                          <p className="text-sm text-gray-500">{designer.email || 'No email provided'}</p>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleViewDesigns(designer)}
-                          className="flex items-center gap-2"
-                        >
-                          <Eye className="h-4 w-4" />
-                          View Designs
-                        </Button>
+                  <Card key={designer.id} className="bg-blue-50 shadow-lg rounded-lg p-4 hover:shadow-xl transition-shadow duration-300">
+                    <CardContent className="text-center">
+                      <div className="w-24 h-24 rounded-full bg-gray-300 mx-auto mb-4 flex items-center justify-center">
+                        <img 
+                          src={`/images/user.png`} 
+                          alt="Designer Avatar" 
+                          className="w-full h-full rounded-full object-cover"
+                        />
                       </div>
+                      <h3 className="font-semibold text-lg">{designer.userName || 'Unnamed Designer'}</h3>
+                      <p className="text-sm text-gray-500">{designer.email || 'No email provided'}</p>
+                      <Button
+                        size="sm"
+                        onClick={() => handleViewDesigns(designer)}
+                        className="mt-4 bg-indigo-500 text-white hover:bg-indigo-600 transition duration-300 transform hover:scale-105"
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Designs
+                      </Button>
                     </CardContent>
                   </Card>
                 ))
@@ -162,25 +149,22 @@ const DesignersPage = () => {
           ) : (
             <div>
               <div className="flex justify-between items-center mb-6">
-                <div className="flex items-center gap-4">
-                  <Button 
-                    variant="outline" 
-                    onClick={handleBackToDesigners}
-                    className="flex items-center gap-2"
-                  >
-                    <X className="h-4 w-4" />
-                    Close
-                  </Button>
-                  <h2 className="text-xl font-semibold">
-                    {selectedDesigner.userName}'s Designs
-                  </h2>
-                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={handleBackToDesigners}
+                  className="flex items-center gap-2"
+                >
+                  Close
+                </Button>
+                <h2 className="text-xl font-semibold">
+                  {selectedDesigner.userName}'s Designs
+                </h2>
               </div>
 
               {designerDesigns.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {designerDesigns.map((design) => (
-                    <Card key={design.designId} className="overflow-hidden">
+                    <Card key={design.designId} className="overflow-hidden hover:shadow-lg transition-shadow duration-200 transform hover:scale-105">
                       <CardContent className="p-4">
                         <h3 className="font-semibold text-lg">{design.designTitle}</h3>
                         <p className="text-sm text-gray-500">{design.description || 'No description provided'}</p>
@@ -189,7 +173,7 @@ const DesignersPage = () => {
                           <p className="text-xs text-gray-400">Updated at: {new Date(design.updatedAt).toLocaleString()}</p>
                         </div>
                         <div className="mt-4">
-                          <img src={design.designInput} alt={design.designTitle} className="w-full h-auto" />
+                          <img src={design.designInput} alt={design.designTitle} className="w-full h-auto rounded-lg" />
                         </div>
                       </CardContent>
                     </Card>

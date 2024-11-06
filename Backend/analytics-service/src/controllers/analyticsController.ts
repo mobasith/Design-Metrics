@@ -100,7 +100,7 @@ class AnalyticsController {
                 processedData: scaledData,
                 insights: {
                     summary: scaledData.insights?.summary,
-                   // keyTakeaways: scaledData.insights?.keyTakeaways || []
+                   keyTakeaways: scaledData.insights|| []
                 },
                 createdAt: new Date(),
             });
@@ -117,15 +117,15 @@ class AnalyticsController {
         }
     }
 
-    private async processColumnData(columnName: string, columnData: any[], dataType: string, model: any): Promise<ProcessedData> {
-        const prompt = this.createPrompt(columnName, columnData, dataType);
-
+    private async processColumnData(columnName: string, columnData: any, dataType: string, model: any): Promise<ProcessedData> {
+        const prompt = this.createPrompt(columnName, Array.isArray(columnData) ? columnData : [columnData], dataType);
+    
         try {
             const jsonData = await this.fetchFromAPIWithRetry(prompt, model);
             return this.structureResponse(jsonData, dataType);
         } catch (apiError: any) {
             console.error(`API request failed for ${columnName}:`, apiError.message);
-            return this.basicDataProcessing(columnData, dataType);
+            return this.basicDataProcessing(Array.isArray(columnData) ? columnData : [columnData], dataType);
         }
     }
 
@@ -366,13 +366,10 @@ Required Output Format:
             // Same as pie chart data
         ]
     },
-    "insights": {
+     "insights": {
         // Provide a summary or insights about the data
         "summary": "Provide a brief summary of the data",
-        "key_takeaways": [
-            "List any key insights or takeaways",
-            "from the data"
-        ]
+        "keyTakeaways": [] // Use the correct spelling here
     }
 }
 
@@ -385,7 +382,8 @@ Rules:
 4. For dates, group by appropriate time periods
 5. Ensure no more than 8 segments in charts
 6. Format numbers to 2 decimal places
-7. Return only valid JSON`;
+7. Return only valid JSON
+8. Return the summary of the data in a string format`;
     }
 
     private structureResponse(response: any, dataType: string): ProcessedData {
@@ -395,16 +393,18 @@ Rules:
 
         const { insights, ...processedResponse } = response;
 
+        const overallInsights = {
+            summary: insights?.summary || '',
+            keyTakeaways: insights?.keyTakeaways || [] // Ensure keyTakeaways is an array
+        };
+
         return {
             ...processedResponse,
             chartData: {
                 pie: processedResponse.chartData?.pie || [],
                 donut: processedResponse.chartData?.donut || []
             },
-            insights: {
-                summary: insights?.summary,
-                keyTakeaways: insights?.key_takeaways || []
-            }
+            insights: overallInsights
         };
     }
 

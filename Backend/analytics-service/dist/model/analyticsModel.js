@@ -28,6 +28,10 @@ const analyticsSchema = new mongoose_1.Schema({
     mongoId: { type: String, required: true },
     userId: { type: Number, required: true },
     processedData: { type: mongoose_1.Schema.Types.Mixed, required: true },
+    insights: {
+        summary: { type: String },
+        keyTakeaways: [{ type: String }]
+    },
     createdAt: { type: Date, default: Date.now }
 }, { strict: false }); // Keep strict: false for flexibility
 const AnalyticsModel = mongoose_1.default.model('Analytics', analyticsSchema);

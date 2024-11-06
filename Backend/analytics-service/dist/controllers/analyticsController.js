@@ -8,6 +8,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -18,6 +29,7 @@ const generative_ai_1 = require("@google/generative-ai");
 class AnalyticsController {
     uploadFeedback(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
+            var _a;
             const { mongoId, userId } = req.body;
             const apiKey = process.env.API_KEY;
             if (!apiKey) {
@@ -42,22 +54,8 @@ class AnalyticsController {
                         const columnData = feedbackData[key];
                         console.log(`Processing column: ${key}, Column Data:`, columnData);
                         const dataType = this.detectDataType(columnData);
-                        if (Array.isArray(columnData) && columnData.length > 500) {
-                            const prompt = this.createPrompt(key, columnData, dataType);
-                            try {
-                                const jsonData = yield this.fetchFromAPIWithRetry(prompt, model);
-                                const structuredData = this.structureResponse(jsonData, dataType);
-                                console.log(`Transformed data for column ${key}:`, structuredData);
-                                scaledData[key] = structuredData;
-                            }
-                            catch (apiError) {
-                                console.error(`API request failed for ${key}:`, apiError.message);
-                                scaledData[key] = this.basicDataProcessing(columnData, dataType);
-                            }
-                        }
-                        else {
-                            scaledData[key] = this.basicDataProcessing(columnData, dataType);
-                        }
+                        const processedData = yield this.processColumnData(key, columnData, dataType, model);
+                        scaledData[key] = processedData;
                     }
                 }
                 else {
@@ -69,6 +67,10 @@ class AnalyticsController {
                     mongoId,
                     userId,
                     processedData: scaledData,
+                    insights: {
+                        summary: (_a = scaledData.insights) === null || _a === void 0 ? void 0 : _a.summary,
+                        keyTakeaways: scaledData.insights || []
+                    },
                     createdAt: new Date(),
                 });
                 yield analyticsEntry.save();
@@ -81,6 +83,19 @@ class AnalyticsController {
             catch (error) {
                 console.error('Error in uploadFeedback:', error);
                 res.status(500).json({ error: error.message });
+            }
+        });
+    }
+    processColumnData(columnName, columnData, dataType, model) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const prompt = this.createPrompt(columnName, Array.isArray(columnData) ? columnData : [columnData], dataType);
+            try {
+                const jsonData = yield this.fetchFromAPIWithRetry(prompt, model);
+                return this.structureResponse(jsonData, dataType);
+            }
+            catch (apiError) {
+                console.error(`API request failed for ${columnName}:`, apiError.message);
+                return this.basicDataProcessing(Array.isArray(columnData) ? columnData : [columnData], dataType);
             }
         });
     }
@@ -127,6 +142,10 @@ class AnalyticsController {
                     chartData: {
                         pie: chartData,
                         donut: chartData
+                    },
+                    insights: {
+                        summary: '',
+                        keyTakeaways: []
                     }
                 };
             }
@@ -149,6 +168,10 @@ class AnalyticsController {
                     chartData: {
                         pie: chartData,
                         donut: chartData
+                    },
+                    insights: {
+                        summary: '',
+                        keyTakeaways: []
                     }
                 };
             }
@@ -175,6 +198,10 @@ class AnalyticsController {
                     chartData: {
                         pie: chartData,
                         donut: chartData
+                    },
+                    insights: {
+                        summary: '',
+                        keyTakeaways: []
                     }
                 };
             }
@@ -188,6 +215,10 @@ class AnalyticsController {
                     chartData: {
                         pie: [],
                         donut: []
+                    },
+                    insights: {
+                        summary: '',
+                        keyTakeaways: []
                     }
                 };
         }
@@ -250,7 +281,7 @@ class AnalyticsController {
     }
     createPrompt(columnName, columnData, dataType) {
         return `
-Analyze and transform the following dataset for visualization purposes, specifically optimized for pie and donut charts. 
+Analyze and transform the following dataset for visualization purposes, specifically optimized for pie and donut charts.
 Column Name: ${columnName}
 Data Type: ${dataType}
 
@@ -288,6 +319,11 @@ Required Output Format:
             {"label": string, "value": number}
             // Same as pie chart data
         ]
+    },
+     "insights": {
+        // Provide a summary or insights about the data
+        "summary": "Provide a brief summary of the data",
+        "keyTakeaways": [] // Use the correct spelling here
     }
 }
 
@@ -300,18 +336,23 @@ Rules:
 4. For dates, group by appropriate time periods
 5. Ensure no more than 8 segments in charts
 6. Format numbers to 2 decimal places
-7. Return only valid JSON`;
+7. Return only valid JSON
+8. Return the summary of the data in a string format`;
     }
     structureResponse(response, dataType) {
         var _a, _b;
         if (!response || typeof response !== 'object') {
             throw new Error('Invalid response structure');
         }
-        const processedResponse = Object.assign(Object.assign({}, response), { chartData: {
-                pie: ((_a = response.chartData) === null || _a === void 0 ? void 0 : _a.pie) || [],
-                donut: ((_b = response.chartData) === null || _b === void 0 ? void 0 : _b.donut) || []
-            } });
-        return processedResponse;
+        const { insights } = response, processedResponse = __rest(response, ["insights"]);
+        const overallInsights = {
+            summary: (insights === null || insights === void 0 ? void 0 : insights.summary) || '',
+            keyTakeaways: (insights === null || insights === void 0 ? void 0 : insights.keyTakeaways) || [] // Ensure keyTakeaways is an array
+        };
+        return Object.assign(Object.assign({}, processedResponse), { chartData: {
+                pie: ((_a = processedResponse.chartData) === null || _a === void 0 ? void 0 : _a.pie) || [],
+                donut: ((_b = processedResponse.chartData) === null || _b === void 0 ? void 0 : _b.donut) || []
+            }, insights: overallInsights });
     }
     fetchFromAPIWithRetry(prompt_1, model_1) {
         return __awaiter(this, arguments, void 0, function* (prompt, model, retries = 3, delay = 1000) {

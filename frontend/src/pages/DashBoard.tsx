@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   LineChart,
   Line,
@@ -23,7 +23,10 @@ import {
   PieChart as PieChartIcon,
   Disc,
   ScatterChart as ScatterPlotIcon,
+  Download,
 } from "lucide-react";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 type ChartType = "bar" | "line" | "pie" | "scatter" | "donut";
 
@@ -58,11 +61,9 @@ const COLORS = [
 
 const Card: React.FC<{ children: React.ReactNode; className?: string }> = ({
   children,
-  className,
+  className = "",
 }) => (
-  <div
-    className={`bg-white rounded-xl shadow-md border border-gray-100 ${className}`}
-  >
+  <div className={`bg-white rounded-xl shadow-md border border-gray-100 ${className}`}>
     {children}
   </div>
 );
@@ -77,6 +78,21 @@ const CardTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 
 const CardContent: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="p-6">{children}</div>
+);
+
+const Button: React.FC<{
+  onClick: () => void;
+  icon?: JSX.Element;
+  children: React.ReactNode;
+  className?: string;
+}> = ({ onClick, icon, children, className = "" }) => (
+  <button
+    onClick={onClick}
+    className={`inline-flex items-center px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors ${className}`}
+  >
+    {icon && <span className="mr-2">{icon}</span>}
+    {children}
+  </button>
 );
 
 const CustomSelect: React.FC<{
@@ -272,6 +288,7 @@ const Dashboard: React.FC = () => {
   const [selectedXAxis, setSelectedXAxis] = useState<string>("");
   const [selectedYAxis, setSelectedYAxis] = useState<string>("");
   const [chartType, setChartType] = useState<ChartType>("bar");
+  const chartRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchData();
@@ -280,14 +297,12 @@ const Dashboard: React.FC = () => {
   const fetchData = async () => {
     try {
       const response = await fetch("http://localhost:3001/api/feedback");
-      const jsonData: ArrayData[] = await response.json();
-      console.log(response);
+      const jsonData = await response.json();
 
       if (Array.isArray(jsonData) && jsonData.length > 0) {
         const arrayData = jsonData[0];
         const availableColumns = Object.keys(arrayData).filter(
-          (key) =>
-            Array.isArray(arrayData[key]) && !["_id", "__v"].includes(key)
+          (key) => Array.isArray(arrayData[key]) && !["_id", "__v"].includes(key)
         );
 
         setData(arrayData);
@@ -302,6 +317,46 @@ const Dashboard: React.FC = () => {
       setError("Failed to fetch data. Please try again later.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const downloadPDF = async () => {
+    if (!chartRef.current) return;
+
+    try {
+      const canvas = await html2canvas(chartRef.current, {
+        scale: 2,
+        logging: false,
+        useCORS: true,
+      });
+
+      const imgWidth = 210;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      const pdf = new jsPDF({
+        orientation: imgHeight > imgWidth ? "portrait" : "landscape",
+        unit: "mm",
+      });
+
+      pdf.setFontSize(16);
+      pdf.text(
+        `${selectedXAxis} vs ${selectedYAxis} - ${chartType.toUpperCase()} Chart`,
+        15,
+        15
+      );
+
+      const imgData = canvas.toDataURL("image/png");
+      pdf.addImage(imgData, "PNG", 15, 25, imgWidth - 30, imgHeight - 30);
+
+      pdf.setFontSize(10);
+      pdf.setTextColor(128);
+      const timestamp = new Date().toLocaleString();
+      pdf.text(`Generated on: ${timestamp}`, 15, pdf.internal.pageSize.height - 10);
+
+      pdf.save(`chart-${chartType}-${Date.now()}.pdf`);
+    } catch (err) {
+      console.error("Error generating PDF:", err);
+      alert("Failed to generate PDF. Please try again.");
     }
   };
 
@@ -349,7 +404,18 @@ const Dashboard: React.FC = () => {
       <div className="max-w-7xl mx-auto space-y-6">
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Dynamic Data Visualization Dashboard</CardTitle>
+            <div className="flex justify-between items-center">
+              <CardTitle>Dynamic Data Visualization Dashboard</CardTitle>
+              {Object.keys(data).length > 0 && selectedXAxis && selectedYAxis && (
+                <Button
+                  onClick={downloadPDF}
+                  icon={<Download size={18} />}
+                  className="ml-4"
+                >
+                  Download PDF
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -380,25 +446,27 @@ const Dashboard: React.FC = () => {
 
         <Card>
           <CardContent>
-            {Object.keys(data).length > 0 && selectedXAxis && selectedYAxis ? (
-              <DynamicChart
-                data={data}
-                xAxis={selectedXAxis}
-                yAxis={selectedYAxis}
-                chartType={chartType}
-              />
-            ) : (
-              <div className="flex h-64 items-center justify-center">
-                <div className="text-center">
-                  <p className="text-gray-500 text-lg font-medium">
-                    No Chart Generated
-                  </p>
-                  <p className="text-gray-400 mt-2">
-                    Please select both axes to generate a chart
-                  </p>
+            <div ref={chartRef}>
+              {Object.keys(data).length > 0 && selectedXAxis && selectedYAxis ? (
+                <DynamicChart
+                  data={data}
+                  xAxis={selectedXAxis}
+                  yAxis={selectedYAxis}
+                  chartType={chartType}
+                />
+              ) : (
+                <div className="flex h-64 items-center justify-center">
+                  <div className="text-center">
+                    <p className="text-gray-500 text-lg font-medium">
+                      No Chart Generated
+                    </p>
+                    <p className="text-gray-400 mt-2">
+                      Please select both axes to generate a chart
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -406,9 +474,7 @@ const Dashboard: React.FC = () => {
           <Card className="mt-6">
             <CardContent>
               <div className="space-y-2">
-                <h3 className="font-semibold text-gray-900">
-                  Debug Information
-                </h3>
+                <h3 className="font-semibold text-gray-900">Debug Information</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div className="p-3 bg-gray-50 rounded-lg">
                     <div className="text-gray-500">Available Columns</div>

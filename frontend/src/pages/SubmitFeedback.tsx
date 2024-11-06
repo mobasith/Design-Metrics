@@ -54,12 +54,12 @@ const SubmitFeedback: React.FC = () => {
 
     try {
       const formData = new FormData();
-      formData.append('file', file);
-      formData.append('description', feedback);
-      
+      formData.append("file", file);
+      formData.append("description", feedback);
+
       // Optionally add design_id if it's needed
       if (designId) {
-        formData.append('design_id', designId.toString());
+        formData.append("design_id", designId.toString());
       }
 
       const response = await axios.post(
@@ -67,16 +67,18 @@ const SubmitFeedback: React.FC = () => {
         formData,
         {
           headers: {
-            'Content-Type': 'multipart/form-data',
+            "Content-Type": "multipart/form-data",
           },
         }
       );
 
       if (response.status === 201) {
-        navigate("/dashboard");
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 500); // Adding a small delay for UX purposes
       }
     } catch (err) {
-      console.error('Upload error:', err);
+      console.error("Upload error:", err);
       setError(
         err instanceof Error ? err.message : "Failed to submit feedback"
       );
@@ -90,7 +92,7 @@ const SubmitFeedback: React.FC = () => {
   );
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4 relative">
       <h1 className="text-4xl font-extrabold mb-6 text-gray-800">
         Submit Feedback
       </h1>
@@ -215,6 +217,12 @@ const SubmitFeedback: React.FC = () => {
           {isSubmitting ? "Submitting..." : "Submit Feedback"}
         </button>
       </form>
+
+      {isSubmitting && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-white"></div>
+        </div>
+      )}
     </div>
   );
 };

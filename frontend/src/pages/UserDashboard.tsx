@@ -20,6 +20,14 @@ import {
   Users,
 } from "lucide-react";
 
+interface UserData {
+  userId: number;
+  userName: string;
+  email: string;
+  roleId: number;
+  role: string; // Added role field
+}
+
 interface Design {
   category: string;
   _id: string;
@@ -42,6 +50,27 @@ const UserDashboard: React.FC = () => {
   const [latestDesigns, setLatestDesigns] = useState<Design[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        setUserData({
+          userId: Number(payload.userId),
+          userName: payload.userName,
+          email: payload.email,
+          roleId: payload.roleId,
+          role: payload.roleId === 1 ? "User" : "Designer",
+        });
+      } catch (error) {
+        console.error("Error parsing JWT token:", error);
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const fetchDesigns = async () => {
@@ -85,8 +114,12 @@ const UserDashboard: React.FC = () => {
             <AvatarFallback>JD</AvatarFallback>
           </Avatar>
           <div className="ml-3">
-            <h2 className="text-lg font-bold">John Doe</h2>
-            <p className="text-gray-500 text-sm">User Role</p>
+            <h2 className="text-lg font-bold">
+              {userData ? userData.userName : "Loading..."}
+            </h2>
+            <p className="text-gray-500 text-sm">
+              {userData ? userData.role : ""}
+            </p>
           </div>
         </div>
         <nav className="mt-4">
@@ -222,7 +255,9 @@ const UserDashboard: React.FC = () => {
                 </Card>
               ))
             ) : (
-              <div className="text-center text-gray-500">No designs found.</div>
+              <p className="text-gray-500 text-center w-full">
+                No designs found.
+              </p>
             )}
           </div>
         )}

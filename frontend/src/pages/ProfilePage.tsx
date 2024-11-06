@@ -21,7 +21,9 @@ interface UserData {
   userName: string;
   email: string;
   roleId: number;
-  role: string; // Added role field
+  role: string;
+  phoneNumber: string;
+  address: string;
 }
 
 const ProfilePage = () => {
@@ -30,15 +32,17 @@ const ProfilePage = () => {
     userName: "",
     email: "",
     roleId: 0,
-    role: "" // Initialize role
+    role: "",
+    phoneNumber: "",
+    address: "",
   });
-  
+
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
-  
+
   const [alert, setAlert] = useState({
     show: false,
     type: "",
@@ -55,7 +59,9 @@ const ProfilePage = () => {
           userName: payload.userName,
           email: payload.email,
           roleId: payload.roleId,
-          role: payload.roleId === 1 ? "User" : "Designer" // Convert roleId to readable role
+          role: payload.roleId === 1 ? "User" : "Designer",
+          phoneNumber: payload.phoneNumber || "",
+          address: payload.address || "",
         });
       } catch (error) {
         console.error("Error parsing JWT token:", error);
@@ -67,7 +73,7 @@ const ProfilePage = () => {
 
   const handlePasswordUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setAlert({
         show: true,
@@ -137,7 +143,7 @@ const ProfilePage = () => {
           <nav className="flex-1 p-4">
             <ul className="space-y-2">
               <li>
-                <a href="#" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors duration-200">
+                <a href="/user-dashboard" className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-100 transition-colors duration-200">
                   <Home className="w-5 h-5" />
                   <span>Dashboard</span>
                 </a>
@@ -158,7 +164,7 @@ const ProfilePage = () => {
                 localStorage.removeItem("token");
                 window.location.href = "/signin";
               }}
-              className="flex items-center space-x-3 p-3 w-full rounded-lg hover:bg-red-50 text-red-600 transition-colors duration-200"
+              className="flex items-center space-x-3 p-3 w-full rounded-lg hover:bg-red-50 text-red-600"
             >
               <LogOut className="w-5 h-5" />
               <span>Logout</span>
@@ -168,111 +174,99 @@ const ProfilePage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 ml-64 p-6">
-        <h1 className="text-3xl font-bold mb-6">Profile Settings</h1>
+      <div className="flex-1 p-6 ml-64">
+        <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-8">
+          <h1 className="text-3xl font-semibold text-gray-800 mb-8">Profile</h1>
 
-        {alert.show && (
-          <Alert className={`mb-6 ${alert.type === "error" ? "bg-red-50" : "bg-green-50"}`}>
-            <AlertDescription>
-              {alert.message}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* User Information Card */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-6">Account Information</h2>
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-2">Username</label>
-              <p className="text-lg font-medium text-gray-800">{userData.userName}</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-2">Role</label>
-              <p className="text-lg font-medium text-blue-600">{userData.role}</p>
-            </div>
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-600 mb-2">Email</label>
-              <p className="text-lg font-medium text-gray-800">{userData.email}</p>
+          {/* Profile Form */}
+          <div className="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 className="text-xl font-semibold mb-6">Account Information</h2>
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-2">Username</label>
+                <p className="text-lg font-medium text-gray-800">{userData.userName}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-2">Role</label>
+                <p className="text-lg font-medium text-blue-600">{userData.role}</p>
+              </div>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-600 mb-2">Email</label>
+                <p className="text-lg font-medium text-gray-800">{userData.email}</p>
+              </div>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-600 mb-2">Phone Number</label>
+                <p className="text-lg font-medium text-gray-800">{userData.phoneNumber}</p>
+              </div>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-600 mb-2">Address</label>
+                <p className="text-lg font-medium text-gray-800">{userData.address}</p>
+              </div>
             </div>
           </div>
 
-          {/* Password Change Button with Modal */}
-          <div className="mt-6 pt-6 border-t">
-            <Dialog>
-              <DialogTrigger asChild>
-                <button className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                  <Key className="w-4 h-4" />
-                  <span>Change Password</span>
-                </button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Change Password</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handlePasswordUpdate} className="space-y-4 mt-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Current Password
-                    </label>
-                    <input
-                      type="password"
-                      value={passwordData.currentPassword}
-                      onChange={(e) =>
-                        setPasswordData({
-                          ...passwordData,
-                          currentPassword: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 border rounded-md focus:ring focus:ring-blue-200"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      New Password
-                    </label>
-                    <input
-                      type="password"
-                      value={passwordData.newPassword}
-                      onChange={(e) =>
-                        setPasswordData({
-                          ...passwordData,
-                          newPassword: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 border rounded-md focus:ring focus:ring-blue-200"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Confirm New Password
-                    </label>
-                    <input
-                      type="password"
-                      value={passwordData.confirmPassword}
-                      onChange={(e) =>
-                        setPasswordData({
-                          ...passwordData,
-                          confirmPassword: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 border rounded-md focus:ring focus:ring-blue-200"
-                      required
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full flex items-center justify-center space-x-2 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors duration-200"
-                  >
-                    <Save className="w-4 h-4" />
-                    <span>Update Password</span>
-                  </button>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
+          {/* Password Change Form */}
+          <form onSubmit={handlePasswordUpdate}>
+            <h2 className="text-xl font-semibold mb-6">Change Password</h2>
+            <div className="mb-6">
+              <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-600 mb-2">Current Password</label>
+              <input
+                type="password"
+                id="currentPassword"
+                className="w-full p-3 border border-gray-300 rounded-md"
+                value={passwordData.currentPassword}
+                onChange={(e) =>
+                  setPasswordData({ ...passwordData, currentPassword: e.target.value })
+                }
+                required
+              />
+            </div>
+            <div className="mb-6">
+              <label htmlFor="newPassword" className="block text-sm font-medium text-gray-600 mb-2">New Password</label>
+              <input
+                type="password"
+                id="newPassword"
+                className="w-full p-3 border border-gray-300 rounded-md"
+                value={passwordData.newPassword}
+                onChange={(e) =>
+                  setPasswordData({ ...passwordData, newPassword: e.target.value })
+                }
+                required
+              />
+            </div>
+            <div className="mb-6">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-600 mb-2">Confirm Password</label>
+              <input
+                type="password"
+                id="confirmPassword"
+                className="w-full p-3 border border-gray-300 rounded-md"
+                value={passwordData.confirmPassword}
+                onChange={(e) =>
+                  setPasswordData({ ...passwordData, confirmPassword: e.target.value })
+                }
+                required
+              />
+            </div>
+
+            {/* Alert */}
+            {alert.show && (
+              <Alert>
+                <AlertDescription>
+                  <p className={`text-${alert.type === "error" ? "red" : "green"}-600`}>
+                    {alert.message}
+                  </p>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <button
+              type="submit"
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg mt-4"
+            >
+              <Save className="w-5 h-5 inline-block mr-2" />
+              Save Changes
+            </button>
+          </form>
         </div>
       </div>
     </div>
