@@ -11,14 +11,11 @@ const upload = (0, multer_1.default)({ dest: 'uploads/' }); // Configure storage
 router.post('/upload', upload.single('file'), (req, res) => {
     analyticsController_1.default.uploadFeedback(req, res);
 });
-//endpoint to fetch feedbacks from feedback-service
-// router.get('/feedback/:designId', async (req: Request, res: Response) => {
-//     try {
-//         const designId = parseInt(req.params.designId, 10);
-//         const feedbackData = await FeedbackModel.find({ designId });
-//         res.json(feedbackData);
-//     } catch (error:any) {
-//         res.status(500).json({ error: error.message });
-//     }
-// });
+// New routes
+router.get('/all', (req, res) => {
+    analyticsController_1.default.getAllAnalytics(req, res);
+});
+router.get('/user/:userId', (req, res) => {
+    analyticsController_1.default.getAnalyticsByUserId(req, res);
+});
 exports.default = router;

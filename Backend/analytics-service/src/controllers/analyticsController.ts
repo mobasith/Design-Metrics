@@ -418,5 +418,34 @@ Rules:
         }
         return visualizationData;
     }
+    // In the analyticsController.js file
+
+// Add this new method to the AnalyticsController class
+async getAllAnalytics(req: Request, res: Response) {
+    try {
+        const analytics = await AnalyticsModel.find({});
+        res.status(200).json(analytics);
+    } catch (error) {
+        console.error('Error fetching all analytics:', error);
+        res.status(500).json({ error: 'Error fetching analytics' });
+    }
 }
+
+// In the analyticsController.js file
+
+// Add this new method to the AnalyticsController class
+async getAnalyticsByUserId(req: Request, res: Response) {
+    const { userId } = req.params;
+
+    try {
+        const analytics = await AnalyticsModel.find({ userId });
+        res.status(200).json(analytics);
+    } catch (error) {
+        console.error(`Error fetching analytics for userId ${userId}:`, error);
+        res.status(500).json({ error: 'Error fetching analytics' });
+    }
+}
+}
+
+
 export default new AnalyticsController();

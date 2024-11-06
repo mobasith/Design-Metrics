@@ -359,5 +359,34 @@ Rules:
         }
         return visualizationData;
     }
+    // In the analyticsController.js file
+    // Add this new method to the AnalyticsController class
+    getAllAnalytics(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const analytics = yield analyticsModel_1.default.find({});
+                res.status(200).json(analytics);
+            }
+            catch (error) {
+                console.error('Error fetching all analytics:', error);
+                res.status(500).json({ error: 'Error fetching analytics' });
+            }
+        });
+    }
+    // In the analyticsController.js file
+    // Add this new method to the AnalyticsController class
+    getAnalyticsByUserId(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { userId } = req.params;
+            try {
+                const analytics = yield analyticsModel_1.default.find({ userId });
+                res.status(200).json(analytics);
+            }
+            catch (error) {
+                console.error(`Error fetching analytics for userId ${userId}:`, error);
+                res.status(500).json({ error: 'Error fetching analytics' });
+            }
+        });
+    }
 }
 exports.default = new AnalyticsController();
