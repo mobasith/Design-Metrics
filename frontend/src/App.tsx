@@ -10,6 +10,7 @@ import AllDesigns from "./pages/AllDesigns";
 import Dashboard from "./pages/DashBoard";
 import DesignView from "./pages/DesignView";
 import ProfilePage from "./pages/ProfilePage";
+import DesignerList from "./pages/DesignerList";
 
 const App: React.FC = () => {
   return (
@@ -21,6 +22,7 @@ const App: React.FC = () => {
         <Route path="/user-dashboard" element={<UserDashboard />} />
         <Route path="/designer-dashboard" element={<DesignerDashboard />} />
         <Route path="/designs/:designId" element={<DesignView />} />
+        <Route path="/all-designers" element={<DesignerList />} />
         <Route path="/submit-feedback" element={<SubmitFeedback />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />

@@ -39,8 +39,7 @@ const InputField: React.FC<InputFieldProps> = ({
           error ? "border-red-500" : ""
         }`} // Change border color if there's an error
       />
-      {error && <p className="text-red-500 text-sm mt-1">{error}</p>} // Display
-      error message if it exists
+      {error && <p className="text-red-500 text-sm mt-1">{error}</p>} 
     </div>
   );
 };

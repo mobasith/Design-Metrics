@@ -12,12 +12,12 @@ import { Button } from "../components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import {
   Layout,
-  LayoutGrid,
   Upload,
   Image,
   Settings,
   LogOut,
   Eye,
+  Users,
 } from "lucide-react";
 
 interface Design {
@@ -75,7 +75,7 @@ const UserDashboard: React.FC = () => {
   return (
     <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
-      <aside className="bg-white shadow-md w-64">
+      <aside className="bg-white shadow-md w-64 h-screen sticky top-0 overflow-y-auto">
         <div className="flex items-center justify-center py-6 border-b">
           <Avatar className="w-12 h-12">
             <AvatarImage
@@ -109,6 +109,13 @@ const UserDashboard: React.FC = () => {
               >
                 <Image className="w-5 h-5 mr-3" />
                 All Designs
+              </button>
+              <button
+                onClick={() => navigate("/all-designers")}
+                className="flex items-center px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              >
+                <Users className="w-5 h-5 mr-3" />
+                All Designers
               </button>
               <button
                 onClick={() => navigate("/profile")}
