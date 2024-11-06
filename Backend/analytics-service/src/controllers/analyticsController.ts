@@ -12,6 +12,10 @@ interface ProcessedData {
         pie: ChartDataPoint[];
         donut: ChartDataPoint[];
     };
+    insights: {
+        summary: string;
+        keyTakeaways: string[];
+    };
 }
 
 interface ChartDataPoint {
@@ -80,22 +84,8 @@ class AnalyticsController {
                     console.log(`Processing column: ${key}, Column Data:`, columnData);
 
                     const dataType = this.detectDataType(columnData);
-                    
-                    if (Array.isArray(columnData) && columnData.length > 500) {
-                        const prompt = this.createPrompt(key, columnData, dataType);
-
-                        try {
-                            const jsonData = await this.fetchFromAPIWithRetry(prompt, model);
-                            const structuredData = this.structureResponse(jsonData, dataType);
-                            console.log(`Transformed data for column ${key}:`, structuredData);
-                            scaledData[key] = structuredData;
-                        } catch (apiError: any) {
-                            console.error(`API request failed for ${key}:`, apiError.message);
-                            scaledData[key] = this.basicDataProcessing(columnData, dataType);
-                        }
-                    } else {
-                        scaledData[key] = this.basicDataProcessing(columnData, dataType);
-                    }
+                    const processedData = await this.processColumnData(key, columnData, dataType, model);
+                    scaledData[key] = processedData;
                 }
             } else {
                 console.error('No valid feedback data received.');
@@ -108,12 +98,16 @@ class AnalyticsController {
                 mongoId,
                 userId,
                 processedData: scaledData,
+                insights: {
+                    summary: scaledData.insights?.summary,
+                   // keyTakeaways: scaledData.insights?.keyTakeaways || []
+                },
                 createdAt: new Date(),
             });
             await analyticsEntry.save();
 
-            res.status(200).json({ 
-                message: 'Feedback processed and saved successfully', 
+            res.status(200).json({
+                message: 'Feedback processed and saved successfully',
                 scaledData,
                 visualizationData: this.extractVisualizationData(scaledData)
             });
@@ -123,13 +117,25 @@ class AnalyticsController {
         }
     }
 
+    private async processColumnData(columnName: string, columnData: any[], dataType: string, model: any): Promise<ProcessedData> {
+        const prompt = this.createPrompt(columnName, columnData, dataType);
+
+        try {
+            const jsonData = await this.fetchFromAPIWithRetry(prompt, model);
+            return this.structureResponse(jsonData, dataType);
+        } catch (apiError: any) {
+            console.error(`API request failed for ${columnName}:`, apiError.message);
+            return this.basicDataProcessing(columnData, dataType);
+        }
+    }
+
     private detectDataType(data: any): 'numerical' | 'categorical' | 'date' | 'text' {
         const dataArray = Array.isArray(data) ? data : [data];
         if (dataArray.length === 0) return 'text';
-        
+
         const sample = dataArray.find(item => item !== null && item !== undefined);
         if (!sample) return 'text';
-    
+
         if (!isNaN(Number(sample))) return 'numerical';
         if (Date.parse(sample)) return 'date';
         return 'categorical';
@@ -138,13 +144,13 @@ class AnalyticsController {
     private basicDataProcessing(data: any, dataType: string): ProcessedData {
         const dataArray = Array.isArray(data) ? data : [data];
         const cleanData = dataArray.filter(item => item !== null && item !== undefined);
-        
+
         switch (dataType) {
             case 'numerical': {
                 const numbers = cleanData.map(Number).filter(n => !isNaN(n));
                 const ranges = this.createNumericalRanges(numbers);
                 const groupedData = this.groupNumericalData(numbers, ranges);
-                
+
                 const rangesObj: { [key: string]: { start: number; end: number; count: number } } = {};
                 Object.entries(groupedData).forEach(([range, count]) => {
                     const [start, end] = range.split('-').map(Number);
@@ -169,10 +175,14 @@ class AnalyticsController {
                     chartData: {
                         pie: chartData,
                         donut: chartData
+                    },
+                    insights: {
+                        summary: '',
+                        keyTakeaways: []
                     }
                 };
             }
-            
+
             case 'categorical': {
                 const grouped = this.groupCategoricalData(cleanData);
                 const chartData = Object.entries(grouped)
@@ -193,15 +203,19 @@ class AnalyticsController {
                     chartData: {
                         pie: chartData,
                         donut: chartData
+                    },
+                    insights: {
+                        summary: '',
+                        keyTakeaways: []
                     }
                 };
             }
-            
+
             case 'date': {
                 const dates = cleanData
                     .map(d => new Date(d))
                     .filter(d => !isNaN(d.getTime()));
-                
+
                 const groupedByMonth = this.groupDatesByPeriod(dates, 'month');
                 const chartData = Object.entries(groupedByMonth)
                     .map(([period, count]) => ({
@@ -222,10 +236,14 @@ class AnalyticsController {
                     chartData: {
                         pie: chartData,
                         donut: chartData
+                    },
+                    insights: {
+                        summary: '',
+                        keyTakeaways: []
                     }
                 };
             }
-            
+
             default:
                 return {
                     type: 'text',
@@ -236,6 +254,10 @@ class AnalyticsController {
                     chartData: {
                         pie: [],
                         donut: []
+                    },
+                    insights: {
+                        summary: '',
+                        keyTakeaways: []
                     }
                 };
         }
@@ -247,7 +269,7 @@ class AnalyticsController {
         const range = max - min;
         const binCount = Math.min(7, Math.ceil(Math.sqrt(numbers.length)));
         const binSize = range / binCount;
-        
+
         return Array.from({ length: binCount }, (_, i) => [
             min + (i * binSize),
             min + ((i + 1) * binSize)
@@ -305,7 +327,7 @@ class AnalyticsController {
 
     private createPrompt(columnName: string, columnData: any[], dataType: string): string {
         return `
-Analyze and transform the following dataset for visualization purposes, specifically optimized for pie and donut charts. 
+Analyze and transform the following dataset for visualization purposes, specifically optimized for pie and donut charts.
 Column Name: ${columnName}
 Data Type: ${dataType}
 
@@ -343,6 +365,14 @@ Required Output Format:
             {"label": string, "value": number}
             // Same as pie chart data
         ]
+    },
+    "insights": {
+        // Provide a summary or insights about the data
+        "summary": "Provide a brief summary of the data",
+        "key_takeaways": [
+            "List any key insights or takeaways",
+            "from the data"
+        ]
     }
 }
 
@@ -363,15 +393,19 @@ Rules:
             throw new Error('Invalid response structure');
         }
 
-        const processedResponse = {
-            ...response,
+        const { insights, ...processedResponse } = response;
+
+        return {
+            ...processedResponse,
             chartData: {
-                pie: response.chartData?.pie || [],
-                donut: response.chartData?.donut || []
+                pie: processedResponse.chartData?.pie || [],
+                donut: processedResponse.chartData?.donut || []
+            },
+            insights: {
+                summary: insights?.summary,
+                keyTakeaways: insights?.key_takeaways || []
             }
         };
-
-        return processedResponse as ProcessedData;
     }
 
     private async fetchFromAPIWithRetry(prompt: string, model: any, retries: number = 3, delay: number = 1000): Promise<any> {
@@ -379,7 +413,7 @@ Rules:
             try {
                 const apiResponse = await model.generateContent(prompt);
                 const responseText = await apiResponse.response.text();
-                
+
                 try {
                     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
                     if (!jsonMatch) {
