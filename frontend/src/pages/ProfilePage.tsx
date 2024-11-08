@@ -196,11 +196,11 @@ const ProfilePage = () => {
               </div>
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-gray-600 mb-2">Phone Number</label>
-                <p className="text-lg font-medium text-gray-800">{userData.phoneNumber}</p>
+                <p className="text-lg font-medium text-gray-800">9876543210</p>
               </div>
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-gray-600 mb-2">Address</label>
-                <p className="text-lg font-medium text-gray-800">{userData.address}</p>
+                <p className="text-lg font-medium text-gray-800">Pune , Maharashtra</p>
               </div>
             </div>
           </div>

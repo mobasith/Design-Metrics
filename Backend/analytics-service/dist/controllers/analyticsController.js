@@ -8,17 +8,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __rest = (this && this.__rest) || function (s, e) {
-    var t = {};
-    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-        t[p] = s[p];
-    if (s != null && typeof Object.getOwnPropertySymbols === "function")
-        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                t[p[i]] = s[p[i]];
-        }
-    return t;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -29,7 +18,6 @@ const generative_ai_1 = require("@google/generative-ai");
 class AnalyticsController {
     uploadFeedback(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            var _a;
             const { mongoId, userId } = req.body;
             const apiKey = process.env.API_KEY;
             if (!apiKey) {
@@ -38,7 +26,6 @@ class AnalyticsController {
             if (!mongoId || userId === undefined) {
                 return res.status(400).json({ error: 'mongoId and userId are required' });
             }
-            // Validate userId is a number
             if (typeof userId !== 'number') {
                 return res.status(400).json({ error: 'userId must be a number' });
             }
@@ -49,6 +36,8 @@ class AnalyticsController {
                 const scaledData = {};
                 const genAI = new generative_ai_1.GoogleGenerativeAI(apiKey);
                 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                // Generate overall dataset insights
+                const overallInsights = yield this.generateOverallInsights(feedbackData, model);
                 if (feedbackData && typeof feedbackData === 'object') {
                     for (const key in feedbackData) {
                         const columnData = feedbackData[key];
@@ -62,23 +51,21 @@ class AnalyticsController {
                     console.error('No valid feedback data received.');
                     return res.status(400).json({ error: 'No valid feedback data received' });
                 }
-                console.log('Processed scaled data:', scaledData);
                 const analyticsEntry = new analyticsModel_1.default({
                     mongoId,
                     userId,
                     processedData: scaledData,
-                    insights: {
-                        summary: (_a = scaledData.insights) === null || _a === void 0 ? void 0 : _a.summary,
-                        keyTakeaways: scaledData.insights || []
-                    },
+                    overallInsights,
                     createdAt: new Date(),
                 });
                 yield analyticsEntry.save();
-                res.status(200).json({
+                const response = {
                     message: 'Feedback processed and saved successfully',
-                    scaledData,
-                    visualizationData: this.extractVisualizationData(scaledData)
-                });
+                    charts: this.extractChartData(scaledData),
+                    insights: overallInsights,
+                    detailedData: scaledData
+                };
+                res.status(200).json(response);
             }
             catch (error) {
                 console.error('Error in uploadFeedback:', error);
@@ -86,16 +73,35 @@ class AnalyticsController {
             }
         });
     }
-    processColumnData(columnName, columnData, dataType, model) {
+    generateOverallInsights(data, model) {
         return __awaiter(this, void 0, void 0, function* () {
-            const prompt = this.createPrompt(columnName, Array.isArray(columnData) ? columnData : [columnData], dataType);
+            const prompt = `
+        Analyze this dataset and provide insights:
+        1. Generate a comprehensive summary of the entire dataset
+        2. List key takeaways and patterns observed
+        3. Focus on relationships between different columns if any
+        4. Highlight any unusual patterns or outliers
+        
+        Dataset: ${JSON.stringify(data)}
+        
+        Required format:
+        {
+            "summary": "A detailed summary of the dataset",
+            "keyTakeaways": ["takeaway1", "takeaway2", ...]
+        }`;
             try {
-                const jsonData = yield this.fetchFromAPIWithRetry(prompt, model);
-                return this.structureResponse(jsonData, dataType);
+                const response = yield this.fetchFromAPIWithRetry(prompt, model);
+                return {
+                    summary: response.summary || "No summary available",
+                    keyTakeaways: Array.isArray(response.keyTakeaways) ? response.keyTakeaways : []
+                };
             }
-            catch (apiError) {
-                console.error(`API request failed for ${columnName}:`, apiError.message);
-                return this.basicDataProcessing(Array.isArray(columnData) ? columnData : [columnData], dataType);
+            catch (error) {
+                console.error('Error generating overall insights:', error);
+                return {
+                    summary: "Error generating insights",
+                    keyTakeaways: []
+                };
             }
         });
     }
@@ -106,25 +112,90 @@ class AnalyticsController {
         const sample = dataArray.find(item => item !== null && item !== undefined);
         if (!sample)
             return 'text';
-        if (!isNaN(Number(sample)))
+        // Convert to number and check if it's valid
+        const numberValue = Number(sample);
+        if (!isNaN(numberValue) && typeof sample !== 'boolean')
             return 'numerical';
+        // Try parsing as date
         if (Date.parse(sample))
             return 'date';
+        // If neither number nor date, treat as categorical
         return 'categorical';
     }
+    processColumnData(columnName, columnData, dataType, model) {
+        return __awaiter(this, void 0, void 0, function* () {
+            // Convert columnData to array if it's not already
+            const dataArray = Array.isArray(columnData) ? columnData : [columnData];
+            const prompt = `
+        Analyze this column data and provide insights:
+        Column Name: ${columnName}
+        Data Type: ${dataType}
+        
+        Required Output Format:
+        {
+            "type": "${dataType}",
+            "summary": {
+                // Appropriate summary based on data type
+            },
+            "charts": {
+                "pieChart": [
+                    {"label": string, "value": number}
+                ],
+                "donutChart": [
+                    {"label": string, "value": number}
+                ]
+            },
+            "columnInsights": {
+                "summary": "Brief analysis of this column",
+                "keyTakeaways": ["insight1", "insight2", ...]
+            }
+        }
+        
+        Data: ${JSON.stringify(dataArray.slice(0, 1000))}
+        
+        Rules:
+        1. Clean null/undefined values
+        2. Group numerical data into max 7 bins
+        3. Group categorical data with <5% frequency into "Others"
+        4. Maximum 8 segments in charts
+        5. Format numbers to 2 decimal places
+        6. Provide specific insights for this column
+        `;
+            try {
+                const jsonData = yield this.fetchFromAPIWithRetry(prompt, model);
+                return this.structureResponse(jsonData, dataType, dataArray);
+            }
+            catch (error) {
+                return this.basicDataProcessing(dataArray, dataType);
+            }
+        });
+    }
+    structureResponse(response, dataType, originalData) {
+        var _a, _b, _c, _d;
+        if (!response || typeof response !== 'object') {
+            throw new Error('Invalid response structure');
+        }
+        return {
+            type: dataType,
+            summary: response.summary || {},
+            data: originalData,
+            charts: {
+                pieChart: ((_a = response.charts) === null || _a === void 0 ? void 0 : _a.pieChart) || [],
+                donutChart: ((_b = response.charts) === null || _b === void 0 ? void 0 : _b.donutChart) || []
+            },
+            columnInsights: {
+                summary: ((_c = response.columnInsights) === null || _c === void 0 ? void 0 : _c.summary) || "",
+                keyTakeaways: ((_d = response.columnInsights) === null || _d === void 0 ? void 0 : _d.keyTakeaways) || []
+            }
+        };
+    }
     basicDataProcessing(data, dataType) {
-        const dataArray = Array.isArray(data) ? data : [data];
-        const cleanData = dataArray.filter(item => item !== null && item !== undefined);
+        const cleanData = data.filter(item => item !== null && item !== undefined);
         switch (dataType) {
             case 'numerical': {
                 const numbers = cleanData.map(Number).filter(n => !isNaN(n));
                 const ranges = this.createNumericalRanges(numbers);
                 const groupedData = this.groupNumericalData(numbers, ranges);
-                const rangesObj = {};
-                Object.entries(groupedData).forEach(([range, count]) => {
-                    const [start, end] = range.split('-').map(Number);
-                    rangesObj[range] = { start, end, count };
-                });
                 const chartData = Object.entries(groupedData).map(([range, count]) => ({
                     label: range,
                     value: count
@@ -136,15 +207,15 @@ class AnalyticsController {
                         min: numbers.length ? Math.min(...numbers) : 0,
                         max: numbers.length ? Math.max(...numbers) : 0,
                         count: numbers.length,
-                        ranges: rangesObj
+                        ranges: this.convertToRangeObject(groupedData)
                     },
                     data: numbers,
-                    chartData: {
-                        pie: chartData,
-                        donut: chartData
+                    charts: {
+                        pieChart: chartData,
+                        donutChart: chartData
                     },
-                    insights: {
-                        summary: '',
+                    columnInsights: {
+                        summary: "Basic numerical analysis",
                         keyTakeaways: []
                     }
                 };
@@ -165,12 +236,12 @@ class AnalyticsController {
                         mostCommon: grouped
                     },
                     data: cleanData,
-                    chartData: {
-                        pie: chartData,
-                        donut: chartData
+                    charts: {
+                        pieChart: chartData,
+                        donutChart: chartData
                     },
-                    insights: {
-                        summary: '',
+                    columnInsights: {
+                        summary: "Basic categorical analysis",
                         keyTakeaways: []
                     }
                 };
@@ -195,12 +266,12 @@ class AnalyticsController {
                         timeGroups: groupedByMonth
                     },
                     data: dates.map(d => d.toISOString()),
-                    chartData: {
-                        pie: chartData,
-                        donut: chartData
+                    charts: {
+                        pieChart: chartData,
+                        donutChart: chartData
                     },
-                    insights: {
-                        summary: '',
+                    columnInsights: {
+                        summary: "Basic date analysis",
                         keyTakeaways: []
                     }
                 };
@@ -212,18 +283,20 @@ class AnalyticsController {
                         count: cleanData.length
                     },
                     data: cleanData,
-                    chartData: {
-                        pie: [],
-                        donut: []
+                    charts: {
+                        pieChart: [],
+                        donutChart: []
                     },
-                    insights: {
-                        summary: '',
+                    columnInsights: {
+                        summary: "Text data analysis",
                         keyTakeaways: []
                     }
                 };
         }
     }
     createNumericalRanges(numbers) {
+        if (numbers.length === 0)
+            return [];
         const min = Math.min(...numbers);
         const max = Math.max(...numbers);
         const range = max - min;
@@ -244,13 +317,21 @@ class AnalyticsController {
             return acc;
         }, {});
     }
+    convertToRangeObject(groupedData) {
+        const rangeObject = {};
+        for (const [range, count] of Object.entries(groupedData)) {
+            const [start, end] = range.split('-').map(Number);
+            rangeObject[range] = { start, end, count };
+        }
+        return rangeObject;
+    }
     groupCategoricalData(data) {
         const initial = data.reduce((acc, val) => {
             acc[val] = (acc[val] || 0) + 1;
             return acc;
         }, {});
         const total = Object.values(initial).reduce((a, b) => a + b, 0);
-        const threshold = total * 0.05; // 5% threshold
+        const threshold = total * 0.05;
         return Object.entries(initial).reduce((acc, [key, count]) => {
             if (count >= threshold) {
                 acc[key] = count;
@@ -279,80 +360,16 @@ class AnalyticsController {
             return acc;
         }, {});
     }
-    createPrompt(columnName, columnData, dataType) {
-        return `
-Analyze and transform the following dataset for visualization purposes, specifically optimized for pie and donut charts.
-Column Name: ${columnName}
-Data Type: ${dataType}
-
-Required Output Format:
-{
-    "type": "${dataType}",
-    "summary": {
-        // For numerical data:
-        "ranges": {
-            "bin1": {"start": number, "end": number, "count": number},
-            "bin2": {"start": number, "end": number, "count": number},
-            // Maximum 7 bins for better visualization
-        },
-        
-        // For categorical data:
-        "categories": {
-            "category1": count,
-            "category2": count,
-            // Group categories with less than 5% frequency into "Others"
-        },
-        
-        // For date data:
-        "timeGroups": {
-            "period1": count,
-            "period2": count
-            // Group by months or quarters depending on data spread
+    extractChartData(scaledData) {
+        const chartData = {};
+        for (const [key, data] of Object.entries(scaledData)) {
+            chartData[key] = {
+                type: data.type,
+                pieChart: data.charts.pieChart,
+                donutChart: data.charts.donutChart
+            };
         }
-    },
-    "chartData": {
-        "pie": [
-            {"label": string, "value": number}
-            // Maximum 8 segments for better visualization
-        ],
-        "donut": [
-            {"label": string, "value": number}
-            // Same as pie chart data
-        ]
-    },
-     "insights": {
-        // Provide a summary or insights about the data
-        "summary": "Provide a brief summary of the data",
-        "keyTakeaways": [] // Use the correct spelling here
-    }
-}
-
-Input Data: ${JSON.stringify(columnData.slice(0, 1000))}
-
-Rules:
-1. Remove null/undefined values
-2. Group numerical data into meaningful ranges (max 7 bins)
-3. For categorical data, group categories with <5% frequency into "Others"
-4. For dates, group by appropriate time periods
-5. Ensure no more than 8 segments in charts
-6. Format numbers to 2 decimal places
-7. Return only valid JSON
-8. Return the summary of the data in a string format`;
-    }
-    structureResponse(response, dataType) {
-        var _a, _b;
-        if (!response || typeof response !== 'object') {
-            throw new Error('Invalid response structure');
-        }
-        const { insights } = response, processedResponse = __rest(response, ["insights"]);
-        const overallInsights = {
-            summary: (insights === null || insights === void 0 ? void 0 : insights.summary) || '',
-            keyTakeaways: (insights === null || insights === void 0 ? void 0 : insights.keyTakeaways) || [] // Ensure keyTakeaways is an array
-        };
-        return Object.assign(Object.assign({}, processedResponse), { chartData: {
-                pie: ((_a = processedResponse.chartData) === null || _a === void 0 ? void 0 : _a.pie) || [],
-                donut: ((_b = processedResponse.chartData) === null || _b === void 0 ? void 0 : _b.donut) || []
-            }, insights: overallInsights });
+        return chartData;
     }
     fetchFromAPIWithRetry(prompt_1, model_1) {
         return __awaiter(this, arguments, void 0, function* (prompt, model, retries = 3, delay = 1000) {
@@ -386,19 +403,6 @@ Rules:
                 }
             }
         });
-    }
-    extractVisualizationData(scaledData) {
-        const visualizationData = {};
-        for (const [key, data] of Object.entries(scaledData)) {
-            if (data.chartData) {
-                visualizationData[key] = {
-                    type: data.type,
-                    pie: data.chartData.pie,
-                    donut: data.chartData.donut
-                };
-            }
-        }
-        return visualizationData;
     }
     // In the analyticsController.js file
     // Add this new method to the AnalyticsController class

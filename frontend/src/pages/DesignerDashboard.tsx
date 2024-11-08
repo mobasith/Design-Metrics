@@ -273,7 +273,9 @@ const DesignerDashboard = () => {
                     <CardTitle className="text-lg font-semibold">{design.designTitle}</CardTitle>
                   </CardHeader>
                   <CardContent>
+                  <img src={design.designInput} alt="desing image" />
                     <p className="text-sm text-gray-600">{design.description}</p>
+                    <p className="mt-2 text-sm text-gray-500">Likes: {design.likeCount}</p>
                   </CardContent>
                   <CardFooter>
                     <p className="text-sm text-gray-500">{formatDate(design.createdAt)}</p>
