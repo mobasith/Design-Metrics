@@ -1,13 +1,18 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import cors from 'cors'; // Import cors
 import analyticsRoutes from './routes/analyticsRoutes';
-
 
 dotenv.config();
 
 const app = express();
 app.use(express.json());
+
+// Enable CORS for all origins or specify a particular origin
+app.use(cors({
+    origin: 'http://localhost:3002' // Allow only this origin, or use '*' for all origins
+}));
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/ANALYTICSDB';
 

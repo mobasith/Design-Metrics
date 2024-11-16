@@ -3,6 +3,7 @@ import AnalyticsModel from '../model/analyticsModel';
 import axios from 'axios';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+
 // Define interfaces for data structures
 interface ProcessedData {
     type: 'numerical' | 'categorical' | 'date' | 'text';
