@@ -56,6 +56,9 @@ Ensure you have the following installed on your local machine:
      cd ../frontend
 <img width="1438" alt="Screenshot 2024-11-17 at 11 46 44 PM" src="https://github.com/user-attachments/assets/c50faa8a-bb46-4ef2-ac14-a133a16a8455">
 <img width="1440" alt="Screenshot 2024-11-17 at 11 47 42 PM" src="https://github.com/user-attachments/assets/1c29cb2d-bafb-4190-bdce-8436440759bd">
+<img width="1440" alt="Screenshot 2024-11-17 at 11 53 47 PM" src="https://github.com/user-attachments/assets/feded0ef-d1fd-43a2-9b9d-4b81f63b4242">
+<img width="1440" alt="Screenshot 2024-11-17 at 11 53 59 PM" src="https://github.com/user-attachments/assets/ae01dee4-1ce1-4fa4-be9c-181e33f07da8">
+
 <img width="1440" alt="Screenshot 2024-11-17 at 11 47 55 PM" src="https://github.com/user-attachments/assets/4dca8961-9d9e-4826-8348-62396f93b3b1">
 <img width="1440" alt="Screenshot 2024-11-17 at 11 48 19 PM" src="https://github.com/user-attachments/assets/0df9c7c7-cb33-4878-8279-ac6571e214f9">
 <img width="1440" alt="Screenshot 2024-11-17 at 11 48 34 PM" src="https://github.com/user-attachments/assets/915a9c23-aefc-477c-a587-9e2cf8c7be29">
