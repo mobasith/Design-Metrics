@@ -1,195 +1,345 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-import { PieChart as RechartsePie, Pie, Cell } from 'recharts';
+import React, { useEffect, useState } from "react";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  ScatterChart,
+  Scatter,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  Cell,
+  ResponsiveContainer,
+} from "recharts";
+import { ChevronDown, ArrowLeft, Download } from "lucide-react";
 
-// Define interfaces for the data structure
+interface ArrayData {
+  [key: string]: Array<string | number>;
+}
+
 interface ChartDataPoint {
-  label: string;
-  value: number;
+  name: string | number;
+  value: string | number;
 }
 
-interface UnitsCharts {
-  pieChart: ChartDataPoint[];
-  donutChart: ChartDataPoint[];
-}
+const COLORS = [
+  "#6366f1",
+  "#ec4899",
+  "#8b5cf6",
+  "#14b8a6",
+  "#f59e0b",
+  "#84cc16",
+];
 
-interface UnitsData {
-  data: number[];
-  charts: UnitsCharts;
-}
+const Card: React.FC<{ title: string; children: React.ReactNode }> = ({
+  title,
+  children,
+}) => (
+  <div className="bg-white rounded-xl shadow-md border border-gray-100 p-4">
+    <h3 className="text-lg font-semibold mb-4 text-gray-900">{title}</h3>
+    {children}
+  </div>
+);
 
-interface ProcessedData {
-  Units: UnitsData;
-}
+const CustomSelect: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  options: string[];
+  placeholder: string;
+}> = ({ value, onChange, options, placeholder }) => (
+  <div className="relative">
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full pl-4 pr-8 py-2 appearance-none bg-white border border-gray-200 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+    >
+      <option value="">{placeholder}</option>
+      {options.map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
+    </select>
+    <ChevronDown
+      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+      size={18}
+    />
+  </div>
+);
 
-interface OverallInsights {
-  summary: string;
-  keyTakeaways: string[];
-}
+const ChartContainer: React.FC<{ children: React.ReactElement }> = ({
+  children,
+}) => (
+  <div className="w-full h-[300px]">
+    <ResponsiveContainer>{children}</ResponsiveContainer>
+  </div>
+);
 
-interface AnalyticsData {
-  processedData: ProcessedData;
-  overallInsights: OverallInsights;
-}
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#ff7300'];
-
-const AnalyticsDashboard = () => {
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+const Dashboard: React.FC = () => {
+  const [data, setData] = useState<ArrayData>({});
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [columns, setColumns] = useState<string[]>([]);
+  const [selectedXAxis, setSelectedXAxis] = useState<string>("");
+  const [selectedYAxis, setSelectedYAxis] = useState<string>("");
 
   useEffect(() => {
-    const fetchAnalytics = async () => {
-      try {
-        const userId = "1730789395576"; // This should be dynamic based on your auth system
-        console.log('Fetching data for user:', userId);
-
-        const response = await fetch(`http://localhost:3003/api/analytics/user/${userId}`);
-        console.log('Response status:', response.status);
-
-        if (!response.ok) throw new Error('Failed to fetch analytics');
-
-        const data = await response.json();
-        console.log('Received data:', data);
-
-        if (!data || data.length === 0) {
-          throw new Error('No data received');
-        }
-
-        setAnalyticsData(data[0]);
-      } catch (err) {
-        console.error('Error in fetchAnalytics:', err);
-        setError(err instanceof Error ? err.message : 'An error occurred');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAnalytics();
+    fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      const response = await fetch("http://localhost:3001/api/feedback");
+      const jsonData = await response.json();
+
+      if (Array.isArray(jsonData) && jsonData.length > 0) {
+        const arrayData = jsonData[0];
+        const availableColumns = Object.keys(arrayData).filter(
+          (key) =>
+            Array.isArray(arrayData[key]) && !["_id", "__v"].includes(key)
+        );
+        setData(arrayData);
+        setColumns(availableColumns);
+
+        if (availableColumns.length >= 2) {
+          setSelectedXAxis(availableColumns[0]);
+          setSelectedYAxis(availableColumns[1]);
+        }
+      }
+    } catch (err) {
+      setError("Failed to fetch data. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownloadPDF = () => {
+    // Note: This is a placeholder - you'll need to implement actual PDF generation
+    // using a library like jsPDF or html2pdf
+    window.print();
+  };
+
+  const handleGoBack = () => {
+    window.history.back();
+  };
+
+  const processData = (): ChartDataPoint[] => {
+    if (!data || !data[selectedXAxis] || !data[selectedYAxis]) return [];
+    return data[selectedXAxis].map((value, index) => ({
+      name: value,
+      value: data[selectedYAxis][index],
+    }));
+  };
+
+  const processedData = processData();
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <p>Loading analytics data...</p>
+      <div className="flex h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <p className="text-red-500">Error: {error}</p>
-      </div>
-    );
-  }
-
-  if (!analyticsData || !analyticsData.processedData || !analyticsData.processedData.Units) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <p>No valid analytics data available</p>
-      </div>
-    );
-  }
-
-  const { processedData, overallInsights } = analyticsData;
-  const { Units } = processedData;
-  const { data: unitsData, charts: unitsCharts } = Units || {};
-
-  return (
-    <div id="analytics-dashboard" className="p-6 space-y-6 bg-white">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Analytics Dashboard</h1>
-        <div className="text-sm text-gray-500">
-          Data available: {unitsData?.length > 0 ? 'Yes' : 'No'}
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-xl font-semibold mb-2">
+            Error Loading Data
+          </div>
+          <div className="text-gray-600">{error}</div>
+          <button
+            onClick={fetchData}
+            className="mt-4 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors"
+          >
+            Try Again
+          </button>
         </div>
       </div>
+    );
+  }
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Summary Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Overall Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-600">
-              {overallInsights?.summary || 'No summary available'}
-            </p>
-            <div className="mt-4">
-              <h4 className="font-semibold mb-2">Key Takeaways:</h4>
-              <ul className="list-disc pl-4 space-y-1">
-                {(overallInsights?.keyTakeaways || []).map((takeaway: string, index: number) => (
-                  <li key={index} className="text-sm text-gray-600">{takeaway}</li>
-                ))}
-              </ul>
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={handleGoBack}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                aria-label="Go back"
+              >
+                <ArrowLeft className="text-gray-600" size={24} />
+              </button>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Analytics Dashboard
+              </h1>
             </div>
-          </CardContent>
-        </Card>
+            <button
+              onClick={handleDownloadPDF}
+              className="flex items-center space-x-2 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors"
+            >
+              <Download size={18} />
+              <span>Download PDF</span>
+            </button>
+          </div>
 
-        {/* Units Over Time Chart */}
-        {unitsData?.length > 0 ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>Units Over Time</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <LineChart width={500} height={300} data={unitsData.map((value: number, index: number) => ({ name: `Entry ${index + 1}`, value }))}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="value" stroke="#8884d8" />
-              </LineChart>
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardContent>
-              <p className="text-center text-gray-500">No units data available</p>
-            </CardContent>
-          </Card>
-        )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                X-Axis Data
+              </label>
+              <CustomSelect
+                value={selectedXAxis}
+                onChange={setSelectedXAxis}
+                options={columns}
+                placeholder="Select X-Axis"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Y-Axis Data
+              </label>
+              <CustomSelect
+                value={selectedYAxis}
+                onChange={setSelectedYAxis}
+                options={columns}
+                placeholder="Select Y-Axis"
+              />
+            </div>
+          </div>
+        </div>
 
-        {/* Pie Chart */}
-        {unitsCharts?.pieChart?.length > 0 ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>Units Distribution (Pie)</CardTitle>
-            </CardHeader>
-            <CardContent className="flex justify-center">
-              <RechartsePie width={300} height={300}>
-                <Pie
-                  data={unitsCharts.pieChart}
-                  cx={150}
-                  cy={150}
-                  labelLine={false}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                >
-                  {unitsCharts.pieChart.map((entry: ChartDataPoint, index: number) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </RechartsePie>
-            </CardContent>
-          </Card>
+        {selectedXAxis && selectedYAxis && processedData.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card title="Bar Chart">
+              <ChartContainer>
+                <BarChart data={processedData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="name" tick={{ fill: "#6b7280" }} />
+                  <YAxis tick={{ fill: "#6b7280" }} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ChartContainer>
+            </Card>
+
+            <Card title="Line Chart">
+              <ChartContainer>
+                <LineChart data={processedData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="name" tick={{ fill: "#6b7280" }} />
+                  <YAxis tick={{ fill: "#6b7280" }} />
+                  <Tooltip />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#6366f1"
+                    strokeWidth={2}
+                    dot={{ fill: "#6366f1" }}
+                  />
+                </LineChart>
+              </ChartContainer>
+            </Card>
+
+            <Card title="Scatter Plot">
+              <ChartContainer>
+                <ScatterChart>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="name" tick={{ fill: "#6b7280" }} />
+                  <YAxis dataKey="value" tick={{ fill: "#6b7280" }} />
+                  <Tooltip />
+                  <Scatter data={processedData} fill="#6366f1" />
+                </ScatterChart>
+              </ChartContainer>
+            </Card>
+
+            <Card title="Pie Chart">
+              <ChartContainer>
+                <PieChart>
+                  <Pie
+                    data={processedData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    label
+                  >
+                    {processedData.map((_, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ChartContainer>
+            </Card>
+
+            <Card title="Donut Chart">
+              <ChartContainer>
+                <PieChart>
+                  <Pie
+                    data={processedData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    label
+                  >
+                    {processedData.map((_, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ChartContainer>
+            </Card>
+
+            <Card title="Area Chart">
+              <ChartContainer>
+                <LineChart data={processedData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="name" tick={{ fill: "#6b7280" }} />
+                  <YAxis tick={{ fill: "#6b7280" }} />
+                  <Tooltip />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke="#6366f1"
+                    fill="#6366f1"
+                    fillOpacity={0.2}
+                    strokeWidth={2}
+                  />
+                </LineChart>
+              </ChartContainer>
+            </Card>
+          </div>
         ) : (
-          <Card>
-            <CardContent>
-              <p className="text-center text-gray-500">No pie chart data available</p>
-            </CardContent>
-          </Card>
+          <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6">
+            <div className="text-center text-gray-500">
+              <p className="text-lg font-medium">No Charts Generated</p>
+              <p className="mt-2">Please select both axes to generate charts</p>
+            </div>
+          </div>
         )}
       </div>
     </div>
   );
 };
 
-export default AnalyticsDashboard;
+export default Dashboard;

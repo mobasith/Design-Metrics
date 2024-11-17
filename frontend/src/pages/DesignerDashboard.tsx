@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Layout, LayoutGrid, Upload, Settings, LogOut, FileText } from "lucide-react";
+import {
+  Layout,
+  LayoutGrid,
+  Upload,
+  Settings,
+  LogOut,
+  FileText,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -48,14 +55,14 @@ const DesignerDashboard = () => {
   });
 
   // Get token from localStorage
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
 
   // Create axios instance with authorization header
   const api = axios.create({
-    baseURL: 'http://localhost:3002/api',
+    baseURL: "http://localhost:3002/api",
     headers: {
-      'Authorization': `Bearer ${token}`
-    }
+      Authorization: `Bearer ${token}`,
+    },
   });
 
   useEffect(() => {
@@ -64,16 +71,19 @@ const DesignerDashboard = () => {
 
   const checkAuthAndFetchDesigns = async () => {
     if (!token) {
-      navigate('/login');
+      navigate("/login");
       return;
     }
-    
+
     try {
       await fetchDesigns();
     } catch (error) {
-      console.error('Initial load error:', error);
-      if (axios.isAxiosError(error) && (error.response?.status === 401 || error.response?.status === 403)) {
-        navigate('/login');
+      console.error("Initial load error:", error);
+      if (
+        axios.isAxiosError(error) &&
+        (error.response?.status === 401 || error.response?.status === 403)
+      ) {
+        navigate("/login");
       }
     }
   };
@@ -82,7 +92,7 @@ const DesignerDashboard = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await api.get('/designs/user/me');
+      const response = await api.get("/designs/user/me");
       setDesigns(response.data);
     } catch (err) {
       console.error("Fetch error:", err);
@@ -108,28 +118,28 @@ const DesignerDashboard = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-  
+
     try {
       if (!formData.designInput) {
         throw new Error("Please select a file");
       }
-  
-      const designId = generateDesignId();  // Generate the ID first
-  
+
+      const designId = generateDesignId(); // Generate the ID first
+
       const formDataToSend = new FormData();
-      formDataToSend.append("designId", designId.toString());  // Include designId
+      formDataToSend.append("designId", designId.toString()); // Include designId
       formDataToSend.append("designTitle", formData.designTitle);
       formDataToSend.append("designInput", formData.designInput);
       if (formData.description) {
         formDataToSend.append("description", formData.description);
       }
-  
+
       const response = await api.post("/designs", formDataToSend, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
-  
+
       if (response.status === 201) {
         await fetchDesigns();
         setShowUploadModal(false);
@@ -137,7 +147,7 @@ const DesignerDashboard = () => {
           designId: 0,
           designTitle: "",
           description: "",
-          designInput: null
+          designInput: null,
         });
       }
     } catch (err) {
@@ -145,7 +155,7 @@ const DesignerDashboard = () => {
       if (axios.isAxiosError(err)) {
         setError(err.response?.data?.message || "Failed to upload design");
         if (err.response?.status === 401) {
-          navigate('/login');
+          navigate("/signin");
         }
       } else {
         setError("An unexpected error occurred");
@@ -166,8 +176,8 @@ const DesignerDashboard = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
+    localStorage.removeItem("token");
+    navigate("/signin");
   };
 
   const formatDate = (dateString: Date) => {
@@ -221,6 +231,13 @@ const DesignerDashboard = () => {
                 Upload Feedback
               </button>
               <button
+                onClick={() => navigate("/chat")}
+                className="flex items-center px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              >
+                <FileText className="w-5 h-5 mr-3" />
+                Chat
+              </button>
+              <button
                 onClick={() => navigate("/profile")}
                 className="flex items-center px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
               >
@@ -260,7 +277,8 @@ const DesignerDashboard = () => {
             <div className="text-red-500 text-center py-8">{error}</div>
           ) : designs.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              No designs found. Click "Upload New Design" to add your first design.
+              No designs found. Click "Upload New Design" to add your first
+              design.
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -270,15 +288,23 @@ const DesignerDashboard = () => {
                   className="w-full bg-white shadow-md rounded-md"
                 >
                   <CardHeader>
-                    <CardTitle className="text-lg font-semibold">{design.designTitle}</CardTitle>
+                    <CardTitle className="text-lg font-semibold">
+                      {design.designTitle}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
-                  <img src={design.designInput} alt="desing image" />
-                    <p className="text-sm text-gray-600">{design.description}</p>
-                    <p className="mt-2 text-sm text-gray-500">Likes: {design.likeCount}</p>
+                    <img src={design.designInput} alt="desing image" />
+                    <p className="text-sm text-gray-600">
+                      {design.description}
+                    </p>
+                    <p className="mt-2 text-sm text-gray-500">
+                      Likes: {design.likeCount}
+                    </p>
                   </CardContent>
                   <CardFooter>
-                    <p className="text-sm text-gray-500">{formatDate(design.createdAt)}</p>
+                    <p className="text-sm text-gray-500">
+                      {formatDate(design.createdAt)}
+                    </p>
                   </CardFooter>
                 </Card>
               ))}
@@ -295,7 +321,10 @@ const DesignerDashboard = () => {
           </DialogHeader>
           <form onSubmit={handleUpload} className="space-y-4">
             <div>
-              <label htmlFor="designTitle" className="block text-sm font-semibold">
+              <label
+                htmlFor="designTitle"
+                className="block text-sm font-semibold"
+              >
                 Design Title
               </label>
               <input
@@ -311,7 +340,10 @@ const DesignerDashboard = () => {
               />
             </div>
             <div>
-              <label htmlFor="description" className="block text-sm font-semibold">
+              <label
+                htmlFor="description"
+                className="block text-sm font-semibold"
+              >
                 Description
               </label>
               <textarea
@@ -325,7 +357,10 @@ const DesignerDashboard = () => {
               />
             </div>
             <div>
-              <label htmlFor="designInput" className="block text-sm font-semibold">
+              <label
+                htmlFor="designInput"
+                className="block text-sm font-semibold"
+              >
                 Design File (Image)
               </label>
               <input
