@@ -10,6 +10,7 @@ interface InputFieldProps {
   type?: string;
   placeholder?: string;
   required?: boolean;
+  className?: string;
   error?: string; // Add this line
 }
 
@@ -39,7 +40,7 @@ const InputField: React.FC<InputFieldProps> = ({
           error ? "border-red-500" : ""
         }`} // Change border color if there's an error
       />
-      {error && <p className="text-red-500 text-sm mt-1">{error}</p>} 
+      {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
     </div>
   );
 };
